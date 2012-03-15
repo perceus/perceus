@@ -1,0 +1,22 @@
+README:
+
+This repository is for the latest Perceus release version intended for 
+production clusters and HPC systems.
+
+Perceus is a highly scalable cluster provisioning software that is flexible 
+enough to enable a diverse range of system deployments in addition to High 
+Performance Computing clusters and cloud infrastructure. Perceus can 
+effectively deploy and manage systems ranging in size from a few systems to 
+many thousands of nodes.
+
+Visit the Perceus homepage at http://perceus.org for more information, 
+documentation, and news about the Perceus software project.
+
+The Design of Perceus includes the following points:
+
+      1. System level provisioning with a strong emphasis on stateless
+      2. Scalable system management and provisioning model
+      3. Simplicity in design
+      4. Flexibility both in modules and core functionality
+      5. Intuitive for a moderate level administrator
+      6. Linux distribution neutral (eventually OS neutral)
