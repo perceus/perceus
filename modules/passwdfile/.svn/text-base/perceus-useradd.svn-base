@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# Copyright (c) 2006, Greg M. Kurtzer, Arthur A. Stevens and Infiscale, Inc.
+# All rights reserved
+#
+
+# Initialize variables
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
+MODDIR=/etc/perceus/modules
+MODULE=passwdfile
+
+if [ -z "$ADDTO" ]; then
+   ADDTO="all"
+fi
+
+if [ ! -f "$MODDIR/$MODULE/$ADDTO" ]; then
+   echo "$0:  ERROR: '$ADDTO' passwdfile module state is unknown"
+   exit 1
+fi
+
+# Exit with an error code and message
+barf() {
+    ERR=$1
+    shift
+    echo $0:  ERROR $ERR:  $*
+    exit $ERR
+}
+
+# Debugging output
+dprint() {
+    [ "x$PERCEUS_DEBUG" = "x1" ] && echo "PERCEUS_DEBUG:  $*"
+}
+
+# Exit cleanly on HUP, INT, and TERM
+trap 'cleanup ; barf -1 Aborted' 1 2 15
+
+PRELINES=`wc -l /etc/passwd | awk '{print $1}'`
+PRELINESPLUSONE=`expr $PRELINES + 1`
+
+/usr/sbin/useradd "$@"
+RC=$?
+
+test $RC -ne 0 && exit $RC
+
+POSTLINES=`wc -l /etc/passwd | awk '{print $1}'`
+
+if [ $PRELINESPLUSONE -eq $POSTLINES ]; then
+   PASSWD_ENTRY=`tail -1 /etc/passwd`
+   echo $PASSWD_ENTRY >> $MODDIR/$MODULE/$ADDTO
+   echo "Perceus-useradd has successfully added user to both the primary system, and"
+   echo "the Perceus passwdfile ($ADDTO) module."
+fi
+
+exit 0

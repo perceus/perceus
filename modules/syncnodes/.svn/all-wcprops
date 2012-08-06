@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/perceus/!svn/ver/2148/1.6/modules/syncnodes
+END
+activate
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/perceus/!svn/ver/2148/1.6/modules/syncnodes/activate
+END
+25-syncnodes.sh
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/perceus/!svn/ver/2148/1.6/modules/syncnodes/25-syncnodes.sh
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/perceus/!svn/ver/2148/1.6/modules/syncnodes/Makefile.am
+END
+defaultroles
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/perceus/!svn/ver/2148/1.6/modules/syncnodes/defaultroles
+END

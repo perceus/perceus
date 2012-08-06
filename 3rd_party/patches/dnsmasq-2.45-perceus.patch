@@ -1,0 +1,30 @@
+diff -Nur -x '*.orig' -x '*.rej' dnsmasq-2.45/src/log.c mezzanine_patched_dnsmasq-2.45/src/log.c
+--- dnsmasq-2.45/src/log.c	2008-07-20 11:26:07 -0700
++++ mezzanine_patched_dnsmasq-2.45/src/log.c	2008-08-20 23:03:33 -0700
+@@ -259,7 +259,7 @@
+ 
+   if (log_stderr) 
+     {
+-      fprintf(stderr, "dnsmasq: ");
++      fprintf(stderr, "perceus-dnsmasq: ");
+       va_start(ap, format);
+       vfprintf(stderr, format, ap);
+       va_end(ap);
+@@ -272,7 +272,7 @@
+       static int isopen = 0;
+       if (!isopen)
+ 	{
+-	  openlog("dnsmasq", LOG_PID, log_fac);
++	  openlog("perceus-dnsmasq", LOG_PID, log_fac);
+ 	  isopen = 1;
+ 	}
+       va_start(ap, format);  
+@@ -306,7 +306,7 @@
+       if (!log_to_file)
+ 	p += sprintf(p, "<%d>", priority | log_fac);
+       
+-      p += sprintf(p, "%.15s dnsmasq[%d]: ", ctime(&time_now) + 4, (int)pid);
++      p += sprintf(p, "%.15s perceus-dnsmasq[%d]: ", ctime(&time_now) + 4, (int)pid);
+       len = p - entry->payload;
+       va_start(ap, format);  
+       len += vsnprintf(p, MAX_MESSAGE - len, format, ap) + 1; /* include zero-terminator */

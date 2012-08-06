@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 35
+/svn/perceus/!svn/ver/2373/1.6/docs
+END
+perceus-nsa-quickstart.tex.in
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/perceus/!svn/ver/2148/1.6/docs/perceus-nsa-quickstart.tex.in
+END
+perceus-userguide.tex.in
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/perceus/!svn/ver/2373/1.6/docs/perceus-userguide.tex.in
+END
+Makefile
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/perceus/!svn/ver/2148/1.6/docs/Makefile
+END

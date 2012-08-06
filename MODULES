@@ -1,0 +1,159 @@
+Perceus module scripts:
+
+   Modules are basically just small scripts or programs that return a shell
+   script that will be run on the slave nodes. This is an example:
+
+      #!/bin/sh
+      echo echo hello world
+
+   This will get run twice. The first time it will be run on the master node
+   and it will return "echo hello world". This output will be directed to the
+   node provision daemon (provisiond) where it will be run. The end result is
+   that the node will print "hello world" on the console.
+
+Perceus module API:
+
+   Perceus will setup some functions to make writing nodescripts easier and
+   more consistant. Here are the defined functions and their usage:
+
+      getfile [path to remote file]
+         This will download the remote file relative to perceus' "localstatedir"
+         that it was compiled with and put it in the current directory. For
+         example, if it was compiled with --localstatedir=/var, then the path on
+         the master is "/var/lib/perceus/" and then the [path to remote file].
+         So a typical example might be: getfile vnfs/$VNFS/vnfs.img
+
+   Perceus will also have some environment varibles set when the nodescript is
+   run on the master:
+
+       $STATE       The provisionary state of the command (e.g. init or ready)
+       $NODENAME    The hostname of the system booting
+       $VNFS        The VNFS capsule name for this system
+       $ENABLED     Is this node enabled (should be boolean)
+       $DEBUG       The debug level of this node (typically 0-3)
+       $GROUPNAME   The group this system is defined to
+       $NODEID      The NODEID of this system
+       $IPADDR      The IP address that this node is at right now
+       $STATEDIR    The path used for the "localstatedir" + lib/perceus
+       $VNFSMETHOD  The configuration file defined 'vnfs transfer method'
+       $VNFSMASTER  The configuration file defined 'vnfs transfer master'
+       $VNFSPREFIX  The configuration file defined 'vnfs transfer prefix'
+
+   example node script:
+
+      #!/bin/sh
+      if [ "x$DEBUG" != "x" -a "x$DEBUG" != "x0" ]; then
+         echo echo DEBUG: I will only print this when debugging
+      fi
+
+   This will first get run on the master via the provision daemon where the
+   DEBUG conditional will be evaluated. The output of "echo DEBUG: ...." will
+   be sent to the node. Nothing will be sent if $DEBUG is not defined or if
+   it is "0".
+
+Perceus module locations:
+
+   Modules will get called by Perceus depending on their physical location in
+   the $statedir/perceus/nodescripts directory. For example, the directory
+   "init" will be used as the node is booting. This is the primary location
+   for scripts responsible for provisioning the nodes. Under this directory
+   there is the following structure:
+
+      $statedir/perceus/nodescripts/init
+      $statedir/perceus/nodescripts/init/all/
+      $statedir/perceus/nodescripts/init/node/[node name]/
+      $statedir/perceus/nodescripts/init/vnfs/[vnfs name]/
+      $statedir/perceus/nodescripts/init/group/[group name]/
+
+   Any scripts placed in all will get run by all nodes. Any scripts residing
+   in any of node/*/, vnfs/*/, or group/*/, will get run depending on the
+   Perceus configuration of the node.
+
+   This method allows for complete flexibility while taking into account
+   grouping to make it easier to deal with very large numbers of nodes.
+
+   This directory structure can also be valid for any other provisionary
+   state (other then "init") that one whishes to use. Provisiond is
+   selective and can be run from booted nodes (e.g. in the "ready" state).
+
+Perceus module nomenclature and versioning:
+
+   Once the modules for the node in question they are ordered by the name of
+   the module itself. The physical location of the module does not have any
+   deterministics as to when the module gets run.
+
+   The following numbering order and nomenclatures should be mainatined:
+
+      XX-scriptname
+
+   The "XX" is the two digit numeric order that it should be run. All modules
+   should be numbered in the order of 10-89 with the following breakdown:
+
+      00-09   Perceus initialization range
+      10-79   VNFS initilization range
+      05-95   All non-VNFS related modules
+      80-89   Perceus de-initilization range
+      90-99   VNFS de-initialization range (runs last for kexec or reboot)
+
+   These ranges are not hard coded but when working with other modules and
+   VNFS authors it is important to maintain consistancy. Perceus comes with
+   initialization modules at 00 and 90. The first is used to setup any
+   functions that modules can use, disk mounts, and sanity checks. The last
+   one undoes anything that needs to be done before the system jumps into
+   the VNFS itself (via a reboot or kexec which should be called from the
+   nodescripts running between 90 and 99.
+
+   VNFS specific node scripts usually have at least 2 but more greater than
+   or equal to 3 sections. The first should happen early on (around 10) and
+   will need to download the VNFS image and make it local for any modules to
+   operate on it and make changes. The second should be near or at 80 which
+   will close the open file system image and prepare for kexec or reboot.
+   The last nodescript will basicaly either be responsible for rebooting the
+   node or calling kexec.
+
+   Modules all running in a single provisionary state (e.g. init or ready)
+   will all be run seperatly and their outputs will all be concatenated
+   into a single script. This means that variables defined in the node
+   script output will be accessible to all nodescripts running after the
+   script that defined it. For example:
+
+      #!/bin/sh
+      echo MASTER_ARCH=`uname -m`
+
+   Will be accessible to another script running later:
+
+      #!/bin/sh
+      echo echo MASTER_ARCH=\$MASTER_ARCH
+
+   Notice the use of the backslash to escape the variable expansion for the
+   first time it gets run on the master.
+
+Perceus module permissions:
+
+   If a module is not set to executable, it will not be run! You have been
+   warned! hehe
+
+Perceus module warning:
+
+   All modules first get exectued on the master node and will operate on the
+   master nodes file system! Only install trusted modules or modules that have
+   been tested.
+
+   Variables and reverse ticks (among possibly other things) may not behave as
+   you want them, or be run on the system that you want if your not paying
+   attention. For example:
+
+      #!/bin/sh
+      echo "REBOOT=`which reboot`"
+      if [ -n "$REBOOT" ]; then
+         /sbin/reboot
+      fi
+
+   This script is full of problems. It will define a variable called REBOOT on
+   the system that is getting provisioned, and is available to *all* node
+   scripts that will run consequetively after this nodescript. The variable
+   will be defined with the output of `which reboot` that will be run on the
+   master (not the remote system). Then the variable is being tested for the
+   existance on the master, not the remote node! Lastly, if somehow this
+   condition evaluated to be true, then the master node would reboot, not the
+   remote system.

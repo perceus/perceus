@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/perceus/!svn/ver/2354/1.6/scripts/demos
+END
+bulkaddnode.pl
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/perceus/!svn/ver/2148/1.6/scripts/demos/bulkaddnode.pl
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/perceus/!svn/ver/2148/1.6/scripts/demos/Makefile.am
+END
+daemon-bench.pl
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/perceus/!svn/ver/2354/1.6/scripts/demos/daemon-bench.pl
+END
+cluster-simulate.pl
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/perceus/!svn/ver/2148/1.6/scripts/demos/cluster-simulate.pl
+END

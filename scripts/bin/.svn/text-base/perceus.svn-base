@@ -1,0 +1,384 @@
+#!/usr/bin/perl -Tw
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+
+BEGIN {
+   require "/etc/perceus/Perceus_Include.pm";
+   push(@INC, "$Perceus_Include::libdir");
+}
+
+use strict;
+use warnings;
+use Perceus::Interface::Cmdline;
+use Perceus::Debug;
+use Perceus::Config;
+use Perceus::Configure;
+use Perceus::DB;
+use Perceus::Sanity;
+use Getopt::Long;
+use File::Basename;
+use vars qw($debug $opt_embeded $opt_nodeid $opt_yes $opt_no $opt_quiet $opt_verbose %config);
+
+Getopt::Long::Configure ("bundling");
+
+$|                      = '1';
+
+my $help                = ();
+my $opt_version         = ();
+my $command             = ();
+my $subcommand          = ();
+my $return              = 0;
+
+GetOptions(
+   'i|nodeid'  => \$opt_nodeid,
+   'help'      => \$help,
+   'd|debug'   => \$debug,
+   'version'   => \$opt_version,
+   'y|yes'     => \$opt_yes,
+   'n|no'      => \$opt_no,
+   'q|quiet'   => \$opt_quiet,
+   'v|verbose' => \$opt_verbose,
+   'e|embeded' => \$opt_embeded,
+);
+
+&dprint("Starting MAIN()");
+
+# Retrieve the current users stats
+my @getpwuid = getpwuid($<);
+
+# Sanitize the users environment
+%ENV                    = ();
+&dprint("Cleared users environment");
+
+$ENV{PATH} = "/bin:/usr/bin:/sbin:/usr/sbin:$Perceus_Include::prefix/bin";
+&dprint("Set 'PATH': $ENV{PATH}");
+$ENV{HOME} = $getpwuid[7];
+&dprint("Set 'HOME': $ENV{HOME}");
+$ENV{TERM} = "xterm";
+&dprint("Set 'TERM': xterm");
+
+$SIG{INT} = sub {
+   &wprint("Recieved a SIGINIT... exiting");
+   $debug and &backtrace();
+   exit 1;
+};
+
+if ( $opt_embeded ) {
+   $opt_yes = 1;
+   $opt_quiet = 1;
+}
+
+if ( $opt_version ) {
+   print "Version=$Perceus_Include::version\n";
+   print "Build=$Perceus_Include::build\n";
+   exit;
+}
+
+
+%config = &parse_config("/etc/perceus/perceus.conf");
+
+&sanity_check();
+
+&dprint("Checking for DB at: $Perceus_Include::database");
+if ( ! -e "$Perceus_Include::database" and ! $opt_quiet ) {
+   &dprint("Database not found, jumping into init");
+   &init_all();
+}
+
+&check_database();
+if ( ! $opt_quiet ) {
+   &check_registered();
+}
+
+$command = shift(@ARGV);
+
+if ( ! $command ) {
+   $command = "about";
+}
+
+&dprint("Got command '$command' from \@ARGV");
+if ( $command eq "help" or defined($help) ) {
+   warn "Usage summary for: $0 $command\n";
+   warn "\n";
+   warn "Perceus Commands:\n";
+   warn "   node          View and/or manipulate node attributes\n";
+   warn "   group         View and/or manipulate node attributes by group\n";
+   warn "   vnfs          Manage VNFS images and attributes\n";
+   warn "   module        Enable, disable or import Perceus modules\n";
+   warn "   info          Show Perceus related information\n";
+   warn "   init          Initialize Perceus\n";
+   warn "   configure     Perceus configuration and/or dependent system services\n";
+   warn "\n";
+   warn "General Options:\n";
+   warn "   -y, --yes     Assume 'yes' to all questions\n";
+   warn "   -n, --no      Assume 'no' to all questions\n";
+   warn "   -h, --help    Show this help screen\n";
+   warn "   -q, --quiet   Be quiet, only show prints and errors\n";
+   warn "   -v, --verbose Be more verbose and print whats going on\n";
+   warn "   -d, --debug   Run Perceus in debugging mode\n";
+   warn "   -e, --embeded Useful if calling via a script (similar to -yq)\n";
+   warn "       --version Show the Perceus version\n";
+   warn "\n";
+   warn "To get further information on any of the Perceus commands type:\n";
+   warn "   # perceus [command] help\n";
+   warn "\n";
+   exit 1;
+} elsif ( $command eq "node" ) {
+   $subcommand = shift(@ARGV) || "";
+   if ( $subcommand eq "status" ) {
+      $return += &UI_NodeStatus(@ARGV);
+   } elsif ( $subcommand eq "show" ) {
+      $return += &UI_NodeShow(@ARGV);
+   } elsif ( $subcommand eq "summary" ) {
+      $return += &UI_NodeSummary(@ARGV);
+   } elsif ( $subcommand eq "list" ) {
+      $return += &UI_NodeList(@ARGV);
+   } elsif ( $subcommand eq "replace" ) {
+      $return += &UI_NodeReplace(@ARGV);
+   } elsif ( $subcommand eq "delete" ) {
+      $return += &UI_NodeDelete(@ARGV);
+   } elsif ( $subcommand eq "add" ) {
+      $return += &UI_NodeAdd(@ARGV);
+   } elsif ( $subcommand eq "set" ) {
+      $return += &UI_NodeSet(@ARGV);
+   } else {
+      warn "Usage summary for: $0 $command\n";
+      warn "\n";
+      warn "Node Commands:\n";
+      warn "   add           Import a new node into the DB\n";
+      warn "   delete        Delete a node or set of nodes\n";
+      warn "   list          List the configured nodes\n";
+      warn "   replace       Replace an old node with a new (already configured) node\n";
+      warn "   set           Set a node configuration entry\n";
+      warn "   show          Dump the node configuration\n";
+      warn "   status        Current status of node provisioning\n";
+      warn "   summary       General configuration summary\n";
+      warn "\n";
+      warn "Command Specific Options:\n";
+      warn "   -i, --nodeid  Reference nodes by their NodeID rather then hostname\n";
+      warn "   -y, --yes     Assume 'yes' to all questions\n";
+      warn "   -n, --no      Assume 'no' to all questions\n";
+      warn "   -q, --quiet   Be quiet, only show prints and errors\n";
+      warn "   -v, --verbose Be more verbose and print whats going on\n";
+      warn "   -d, --debug   Run Perceus in debugging mode\n";
+      warn "   -e, --embeded Useful if calling via a script (similar to -yq)\n";
+      warn "\n";
+      exit 1;
+   }
+} elsif ( $command eq "group" ) {
+   $subcommand = shift(@ARGV) || "";
+   if ( $subcommand eq "status" ) {
+      $return += &UI_GroupStatus(@ARGV);
+   } elsif ( $subcommand eq "show" ) {
+      $return += &UI_GroupShow(@ARGV);
+   } elsif ( $subcommand eq "summary" ) {
+      $return += &UI_GroupSummary(@ARGV);
+   } elsif ( $subcommand eq "list" ) {
+      $return += &UI_GroupList(@ARGV);
+   } elsif ( $subcommand eq "nodelist" ) {
+      $return += &UI_GroupNodelist(@ARGV);
+   } elsif ( $subcommand eq "delete" ) {
+      $return += &UI_GroupDelete(@ARGV);
+   } elsif ( $subcommand eq "set" ) {
+      $return += &UI_GroupSet(@ARGV);
+   } else {
+      warn "Usage summary for: $0 $command\n";
+      warn "\n";
+      warn "Group Commands:\n";
+      warn "   delete     Delete all nodes associated in a group(s)\n";
+      warn "   list       List the known groups\n";
+      warn "   nodelist   List nodes part of a group\n";
+      warn "   set        Set a node configuration entry\n";
+      warn "   status     Current status of nodes provisioning\n";
+      warn "   show       Dump the node configuration\n";
+      warn "   summary    General configuration summary\n";
+      warn "\n";
+      warn "Command Specific Options:\n";
+      warn "   -y, --yes     Assume 'yes' to all questions\n";
+      warn "   -n, --no      Assume 'no' to all questions\n";
+      warn "   -q, --quiet   Be quiet, only show prints and errors\n";
+      warn "   -v, --verbose Be more verbose and print whats going on\n";
+      warn "   -d, --debug   Run Perceus in debugging mode\n";
+      warn "   -e, --embeded Useful if calling via a script (similar to -yq)\n";
+      warn "\n";
+      exit 1;
+   }
+} elsif ( $command eq "vnfs" ) {
+   $subcommand = shift(@ARGV) || "";
+   if ( $subcommand eq "list" ) {
+      $return += &UI_VnfsList(@ARGV);
+   } elsif ( $subcommand eq "import" ) {
+      $return += &UI_VnfsImport($ARGV[0]);
+   } elsif ( $subcommand eq "export" ) {
+      $return += &UI_VnfsExport($ARGV[0], $ARGV[1]);
+   } elsif ( $subcommand eq "delete" ) {
+     $return += &UI_VnfsDelete(@ARGV);
+   } elsif ( $subcommand eq "mount" ) {
+     $return += &UI_VnfsMount($ARGV[0]);
+   } elsif ( $subcommand eq "close" ) {
+     $return += &UI_VnfsClose($ARGV[0]);
+   } elsif ( $subcommand eq "umount" ) {
+     $return += &UI_VnfsUmount($ARGV[0]);
+   } elsif ( $subcommand eq "configure" ) {
+     $return += &UI_VnfsConfigure($ARGV[0]);
+   } elsif ( $subcommand eq "livesync" ) {
+     $return += &UI_VnfsLivesync(@ARGV);
+   } elsif ( $subcommand eq "clone" ) {
+     $return += &UI_VnfsClone($ARGV[0], $ARGV[1]);
+   } elsif ( $subcommand eq "rebuild" ) {
+     $return += &UI_VnfsRebuild($ARGV[0]);
+   } else {
+      warn "Usage summary for: $0 $command\n";
+      warn "\n";
+      warn "VNFS Commands:\n";
+      warn "   clone      Make a copy of an imported VNFS capsule\n";
+      warn "   close      Close the VNFS image and discard any changes\n";
+      warn "   configure  Run the vnfs configuration scripts\n";
+      warn "   delete     Delete/remove an installed VNFS capsule\n";
+      warn "   import     Import a new VNFS capsule into Perceus\n";
+      warn "   export     Export an existing VNFS to a file (capsule)\n";
+      warn "   list       List configured VNFS capsules\n";
+      warn "   livesync   Update the file system of a running node (without rebooting)\n";
+      warn "   mount      Open the VNFS image to modification\n";
+      warn "   rebuild    Rebuild the node image (shortcut for mount/umount)\n";
+      warn "   umount     Close the VNFS image and save any changes\n";
+      warn "\n";
+      warn "Command Specific Options:\n";
+      warn "   -y, --yes     Assume 'yes' to all questions\n";
+      warn "   -n, --no      Assume 'no' to all questions\n";
+      warn "   -q, --quiet   Be quiet, only show prints and errors\n";
+      warn "   -v, --verbose Be more verbose and print whats going on\n";
+      warn "   -d, --debug   Run Perceus in debugging mode\n";
+      warn "   -e, --embeded Useful if calling via a script (similar to -yq)\n";
+      warn "\n";
+      exit 1;
+   }
+} elsif ( $command eq "module" ) {
+   $subcommand = shift(@ARGV) || "";
+   if ( $subcommand eq "import" ) {
+      $return += &UI_ModuleImport(@ARGV);
+   } elsif ( $subcommand eq "list" ) {
+      $return += &UI_ModuleList(@ARGV);
+   } elsif ( $subcommand eq "activate" or $subcommand eq "enable" ) {
+      $return += &UI_ModuleEnable(@ARGV);
+   } elsif ( $subcommand eq "deactivate" or $subcommand eq "disable" ) {
+      $return += &UI_ModuleDisable(@ARGV);
+   } elsif ( $subcommand eq "delete" ) {
+      $return += &UI_ModuleDelete(@ARGV);
+   } elsif ( $subcommand eq "summary" ) {
+      $return += &UI_ModuleSummary(@ARGV);
+   } elsif ( $subcommand eq "states" ) {
+      $return += &UI_ModuleStates(@ARGV);
+   } else {
+      warn "Usage summary for: $0 $command\n";
+      warn "\n";
+      warn "Module Commands:\n";
+      warn "   activate   Activate a module to run in a particular provisionary state\n";
+      warn "   deactivate Deactivate a module in a particular provisionary state\n";
+      warn "   delete     Delete a module from Perceus\n";
+      warn "   import     Import a new module into Perceus\n";
+      warn "   list       List the installed modules (doesn't mean active!)\n";
+      warn "   summary    Show list of modules and activated provisionary states\n";
+      warn "   states     Show list of modules by their activated provisionary state\n";
+      warn "\n";
+      warn "Command Specific Options:\n";
+      warn "   -y, --yes     Assume 'yes' to all questions\n";
+      warn "   -n, --no      Assume 'no' to all questions\n";
+      warn "   -q, --quiet   Be quiet, only show prints and errors\n";
+      warn "   -v, --verbose Be more verbose and print whats going on\n";
+      warn "   -d, --debug   Run Perceus in debugging mode\n";
+      warn "   -e, --embeded Useful if calling via a script (similar to -yq)\n";
+      warn "\n";
+      exit 1;
+   }
+} elsif ( $command eq "info" ) {
+   $subcommand = shift(@ARGV) || "";
+   if ( $subcommand eq "about" ) {
+      $return += &UI_About();
+   } elsif ( $subcommand eq "config" ) {
+      $return += &UI_Config(@ARGV);
+   } elsif ( $subcommand eq "system" ) {
+      $return += &UI_System(@ARGV);
+   } else {
+      warn "Usage summary for: $0 $command\n";
+      warn "\n";
+      warn "Info Commands:\n";
+      warn "   about      Print information about Perceus\n";
+      warn "   config     Return various configuration parameters\n";
+      warn "   system     Print system information (useful for troubleshooting)\n";
+      warn "\n";
+      warn "Command Specific Options:\n";
+      warn "   -q, --quiet   Be quiet, only show prints and errors\n";
+      warn "   -v, --verbose Be more verbose and print whats going on\n";
+      warn "   -d, --debug   Run Perceus in debugging mode\n";
+      warn "   -e, --embeded Useful if calling via a script (similar to -yq)\n";
+      warn "\n";
+      exit 1;
+   }
+} elsif ( $command eq "contact" ) {
+   $subcommand = shift(@ARGV) || "";
+   if ( $subcommand eq "support" or $subcommand eq "help" ) {
+      $return += &UI_ContactSupport();
+   } elsif ( $subcommand eq "register" ) {
+      $return += &UI_ContactRegister();
+   } else {
+      warn "Usage summary for: $0 $command\n";
+      warn "\n";
+      warn "Contact Commands:\n";
+      warn "   support    Send help request to the perceus support team\n";
+      warn "   register   Register your version of Perceus\n";
+      warn "\n";
+      warn "Command Specific Options:\n";
+      warn "   -q, --quiet   Be quiet, only show prints and errors\n";
+      warn "   -v, --verbose Be more verbose and print whats going on\n";
+      warn "   -d, --debug   Run Perceus in debugging mode\n";
+      warn "\n";
+      exit 1;
+   }
+} elsif ( $command eq "configure" or $command eq "config" ) {
+   $subcommand = shift(@ARGV) || "";
+   if ( $subcommand eq "apache" ) {
+      $return += &UI_ConfigureApache();
+   } elsif ( $subcommand eq "nfs" ) {
+      $return += &UI_ConfigureNfs();
+   } elsif ( $subcommand eq "sshkeys" ) {
+      $return += &UI_ConfigureSshKeys();
+   } elsif ( $subcommand eq "dhcpd" or $subcommand eq "dhcp" ) {
+      $return += &UI_ConfigureDhcpd();
+   } elsif ( $subcommand eq "hosts" ) {
+      $return += &UI_ConfigureHosts();
+   } else {
+      warn "Usage summary for: $0 $command\n";
+      warn "\n";
+      warn "Configure Commands:\n";
+      warn "   apache     Initialize and configure for use with Apache\n";
+      warn "   dhcpd      Configure the integrated Perceus DHCPD service\n";
+      warn "   hosts      Generate static address for the nodes and update /etc/hosts\n";
+      warn "   nfs        Initialize and configure for use with NFS\n";
+      warn "   sshkeys    Configure the Perceus ssh host keys\n";
+      warn "\n";
+      warn "Command Specific Options:\n";
+      warn "   -y, --yes     Assume 'yes' to all questions\n";
+      warn "   -n, --no      Assume 'no' to all questions\n";
+      warn "   -q, --quiet   Be quiet, only show prints and errors\n";
+      warn "   -v, --verbose Be more verbose and print whats going on\n";
+      warn "   -d, --debug   Run Perceus in debugging mode\n";
+      warn "   -e, --embeded Useful if calling via a script (similar to -yq)\n";
+      warn "\n";
+      exit 1;
+   }
+} elsif ( $command eq "init" ) {
+   $return += &UI_Init();
+} elsif ( $command eq "about" ) {
+   # If no perceus commands were given, show the about page
+   &UI_About();
+} elsif ( defined($command) ) {
+   # Show error on unknown command
+   &eprint("Unrecognized command '$command', type 'perceus help' for usage summary.");
+   exit 1;
+}
+
+&dprint("Ending MAIN()");
+exit($return);

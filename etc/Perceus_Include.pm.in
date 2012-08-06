@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+
+# Do not edit or change anything in this file. It is automatically generated
+# at Perceus build time to reflect the paths of the configured installation.
+# Any changes to this file will break things if you don't know exactly what
+# your doing! You have been warned. :)
+
+package Perceus_Include;
+
+our $prefix = "@prefix@";
+our $localstatedir = "@localstatedir@";
+our $sysconfdir = "/etc/";
+our $libdir = "$prefix/lib/perceus/";
+our $libexecdir = "$prefix/libexec/perceus/";
+our $initdir = "$sysconfdir/init.d/";
+our $statedir = "$localstatedir/lib/perceus/";
+our $version = "@perceus_version@";
+our $build = "@perceus_build@";
+our $database = "$statedir/database";
+our $service_start = "@perceus_service_start@";
+our $service_stop = "@perceus_service_stop@";
+our $service_on= "@perceus_service_on@";
+our $service_off= "@perceus_service_off@";
+our $inetd_restart = "@perceus_inetd_restart@";
+our $operating_system = "@perceus_operating_system@";
+our $distribution_release_file = "@perceus_distribution_release_file@";
+our $enable_gpxe = "@enable_gpxe@";
+
+1;

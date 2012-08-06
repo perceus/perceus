@@ -1,0 +1,8 @@
+/etc/init.d/provisiond
+/etc/init.d/perceus
+/etc/bash_completion.d/perceus_completion
+/etc/httpd/conf.d/perceus-cgi.conf
+/etc/perceus/perceus.conf
+/etc/perceus/defaults.conf
+/etc/perceus/Perceus_Include.pm
+/etc/sysconfig/perceus

@@ -1,0 +1,110 @@
+diff -ru linux-2.6.24.3/arch/x86/kernel/efi_32.c linux-2.6.24.3.efipatched/arch/x86/kernel/efi_32.c
+--- linux-2.6.24.3/arch/x86/kernel/efi_32.c	2008-02-25 16:20:20 -0800
++++ linux-2.6.24.3.efipatched/arch/x86/kernel/efi_32.c	2008-03-06 21:06:55 -0800
+@@ -17,6 +17,20 @@
+  *
+  * Goutham Rao: <goutham.rao@intel.com>
+  *	Skip non-WB memory and ignore empty memory ranges.
++ *
++ *	Somnath Chakrabarti: <somnath.chakrabarti@intel.com>
++ *		The EFI memory map on X86 platforms gets overwritten (specifically
++ *		during initrd decompression if malloc inside init/initramfs.c returns
++ *		memory from this region) before the efi_initialize_iomem_resources()
++ *		call, as a result /proc/iomem only contains the PCI map and doesn't
++ *		contain any details of conventional memory.
++ *
++ *		The new method copies the original EFI memory map to a ZONE_NORMAL region
++ *		and reserves this new region for being used in
++ *		efi_initialize_iomem_resources() call.
++ *
++ * Greg Kurtzer: <gmk@infiscale.com>
++ * 		Updated Somnath's patch for 2.6.24.
+  */
+ 
+ #include <linux/kernel.h>
+@@ -238,16 +252,81 @@
+ /*
+  * We need to map the EFI memory map again after paging_init().
+  */
++
++/*
++ * An EFI booted kernel somtimes overwrites the bios provided EFI memory during
++ * initrd decompression. The malloc call in init/initramfs.c returns memory
++ * which sometimes overwrites the EFI memory map. Copying and reserving the EFI
++ * memory map region prevents it from getting overwritten.
++ */
++
+ void __init efi_map_memmap(void)
+ {
+-	memmap.map = NULL;
++	int i;
++	void *safe_memmap=NULL,*orig_memmap=NULL;
++	/*
++	 * First try to get page(s) from ZONE_NORMAL
++	 */
++	safe_memmap = alloc_bootmem_pages(EFI_MEMMAP_SIZE);
++	if (safe_memmap == NULL) {
++		printk(KERN_ERR PFX "Could not Allocate bootmem page(s)\n");
++		/*
++		 * Directly mapping EFI Map provided by BIOS since
++		 * could not get page(s) from ZONE_NORMAL
++		 */
++		memmap.map = bt_ioremap((unsigned long) memmap.phys_map,
++			(memmap.nr_map * memmap.desc_size));
++		if (memmap.map == NULL)
++			printk(KERN_ERR PFX "Could not remap the EFI memmap!\n");
++	}
+ 
+-	memmap.map = bt_ioremap((unsigned long) memmap.phys_map,
++	else {
++		/*
++		 * Directly mapping EFI Map provided by BIOS
++		 * for copying into ZONE_NORMAL buffer
++		 */
++		orig_memmap = bt_ioremap((unsigned long) memmap.phys_map,
+ 			(memmap.nr_map * memmap.desc_size));
+-	if (memmap.map == NULL)
+-		printk(KERN_ERR PFX "Could not remap the EFI memmap!\n");
++		if (orig_memmap == NULL) {
++			printk(KERN_ERR PFX "Could not remap the EFI memmap!\n");
++
++			/*
++			 * Need not explicitly free safe_memmap as all
++			 * unreserved memory will be consumed by mem_init()
++			 */
++		}
++		else {
++			/*
++			 * reserve the location of the new EFI memory map
++			 */
++
++			reserve_bootmem((unsigned long)(safe_memmap - PAGE_OFFSET),EFI_MEMMAP_SIZE);
++
++			/*
++			 * Finally do the copy business
++			 */
++			for (i=0; i < EFI_MEMMAP_SIZE; i++)
++				*((unsigned char *)safe_memmap + i) =
++					*((unsigned char *)orig_memmap + i);
++			/*
++			 * unmap the original EFI memmap
++			 */
++
++			bt_iounmap(orig_memmap,EFI_MEMMAP_SIZE);
++
++			/* safe_memmap is in ZONE_NORMAL so there will be
++			 * one to one correspondence between safe_memmap kernel virtual
++			 * and physical address
++			 */
++
++			memmap.map = safe_memmap;
++			memmap.phys_map = safe_memmap - PAGE_OFFSET;
++			printk(KERN_INFO PFX "EFI Memory Map Relocated at 0x%08lx\n",(unsigned long)memmap.phys_map);
++		}
++	}
+ 
+ 	memmap.map_end = memmap.map + (memmap.nr_map * memmap.desc_size);
++
+ }
+ 
+ #if EFI_DEBUG

@@ -1,0 +1,86 @@
+10
+
+dir
+2402
+https://svn.perceus.org/svn/perceus/1.6/scripts
+https://svn.perceus.org/svn/perceus
+
+
+
+2010-07-29T18:45:19.272202Z
+2402
+bernardl
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+7b6a6329-8a07-0410-910d-d092644309f1
+
+cgi
+dir
+
+share
+dir
+
+init.d
+dir
+
+lib
+dir
+
+demos
+dir
+
+bin
+dir
+
+Makefile.am
+file
+
+
+
+
+2011-11-14T17:36:51.185085Z
+e1526d5b4680cd45a83a071fb3b1250d
+2009-11-01T05:19:20.671342Z
+2346
+gmk
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+167
+
+initramfs
+dir
+
+nodescripts
+dir
+

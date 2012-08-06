@@ -1,0 +1,21 @@
+#!/bin/sh
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+
+seconds=30
+reboot="/sbin/reboot"
+tmpfile="/tmp/reboot"
+
+
+echo
+echo "In $seconds  seconds this system will reboot..."
+echo "Press [ENTER] to interrupt the reboot process and get a shell"
+touch $tmpfile
+(sleep $seconds; [ -f "$tmpfile" ] && $reboot) &
+read foo
+rm -f $tmpfile
+echo " ########################## BEGIN INTERACTIVE SHELL ########################### "
+/bin/sh
+$reboot

@@ -1,0 +1,12 @@
+diff -ur kexec-tools-testing-20070330/purgatory/arch/i386/entry32-16.S kexec-tools-testing-20070330.patched/purgatory/arch/i386/entry32-16.S
+--- kexec-tools-testing-20070330/purgatory/arch/i386/entry32-16.S	2007-03-29 22:34:36.000000000 -0600
++++ kexec-tools-testing-20070330.patched/purgatory/arch/i386/entry32-16.S	2007-05-24 17:09:12.000000000 -0600
+@@ -25,7 +25,7 @@
+ entry16:
+ 	.code32
+ 	/* Compute where I am running at */
+-	movl	$entry16_debug, %ebx	
++	movl	$entry16, %ebx	
+ 
+ 	/* Fixup my real mode segment */
+ 	movl	%ebx, %eax

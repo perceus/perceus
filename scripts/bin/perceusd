@@ -1,0 +1,885 @@
+#!/usr/bin/perl
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+# Copyright (c) 2010-2011 Arthur A. Stevens, Infiscale
+#
+
+BEGIN {
+    require "/etc/perceus/Perceus_Include.pm";
+    push( @INC, "$Perceus_Include::libdir" );
+}
+
+use strict;
+use warnings;
+use Perceus::Nodes;
+use Perceus::Util;
+use Perceus::Config;
+use Perceus::Debug;
+use Perceus::DB;
+use Perceus::Sanity;
+use Getopt::Long;
+use IO::Socket;
+use IO::Select;
+use File::Basename;
+use Net::ARP;
+use Fcntl;
+use Time::HiRes qw(gettimeofday);
+
+Getopt::Long::Configure("bundling");
+
+$| = '1';
+
+our $debug      = ();
+our $verbose    = ();
+our $statistics = ();
+
+# If set, this flag tells the &*print functions not to print
+our $daemon = ();
+
+my $timeout       = ();
+my $help          = ();
+my $sock          = ();
+my $select        = ();
+my $sock_stats    = ();
+my %slaves        = ();
+my %db            = ();
+my $foreground    = ();
+my $time          = gettimeofday();
+my %data          = ();
+my $critical_loop = 1;
+my $prompt        = ();
+my @sel           = ();
+
+my $usage = "USAGE: $0 [options]
+Options:
+   -t, --timeout    How long should we allow nodescripts and connections
+                    to persist before killing them.
+   -h, --help       Show this help screen
+   -v, --verbose    More verbose output used for testing
+       --debug      Show very verbose/debugging output
+       --foreground Don't run in the background
+
+Perceus is created from the developers of the Warewulf cluster management
+software taking stateless and statefull provisioning to another level.
+
+For more documentation, support, information, and prebuilt VNFS capsules,
+visit us at: http://www.perceus.org/
+";
+
+GetOptions(
+    'timeout|t=s'  => \$timeout,
+    'help'         => \$help,
+    'debug'        => \$debug,
+    'verbose|v'    => \$verbose,
+    'statistics|s' => \$statistics,
+    'foreground'   => \$foreground,
+);
+
+&dprint("Starting MAIN()");
+
+&sanity_check();
+&check_database();
+
+# Global presets
+my $fifo                = "/tmp/.perceusd";
+my @databases           = qw(hostname group status ipaddr lastcontact);
+my %config              = &parse_config("/etc/perceus/perceus.conf");
+my $eth                 = $config{"master network device"}[0];
+my $controlport_address = $config{"controlport bind address"}[0] || "127.0.0.1";
+my $controlport_allow   = $config{"controlport allow address"}[0] || "none";
+
+%ENV = ();
+$ENV{PATH} = "/bin:/usr/bin";
+
+if ( $verbose or $debug ) {
+    $foreground = 1;
+}
+if ($statistics) {
+    $foreground = 1;
+    $daemon     = 1;
+}
+
+if ($help) {
+    die $usage;
+}
+
+if ( !-e "$Perceus_Include::database" ) {
+    &eprint(
+"Database is not present! Run the 'perceus' command line tool to create."
+    );
+    exit 1;
+}
+
+$timeout ||= 5;
+
+$SIG{PIPE} = 'IGNORE';
+
+$SIG{HUP} = sub {
+    &wprint("Recieved a SIGHUP... nothing to do here");
+    return (1);
+};
+
+$SIG{TERM} = sub {
+    kill 'TERM' => keys %slaves;
+    $critical_loop = ();
+    unlink("/var/run/perceusd.pid");
+    &wprint("Recieved a SIGTERM... exiting");
+};
+
+$SIG{INT} = sub {
+    kill 'INT' => keys %slaves;
+    $critical_loop = ();
+    unlink("/var/run/perceusd.pid");
+    &wprint("Recieved a SIGINIT... exiting");
+};
+
+# Create the select object
+&dprint("Creating the select object");
+$select = new IO::Select();
+
+&dprint("Creating TCP socket at port 987");
+my $s = IO::Socket::INET->new(
+    Proto     => 'tcp',
+    LocalPort => 987,
+    LocalAddr => &get_ipaddr($eth),
+    Listen    => 256,
+    Type      => SOCK_STREAM,
+    Timeout   => 5,
+    ReuseAddr => 1,
+);
+
+if ( !$s ) {
+    &eprint("Could not create new socket at TCP:987 - $!");
+    exit 1;
+}
+
+&dprint("Creating TCP socket at port 9870");
+my $m = IO::Socket::INET->new(
+    Proto     => 'tcp',
+    LocalPort => 9870,
+    LocalAddr => $controlport_address,
+    Listen    => 256,
+    Type      => SOCK_STREAM,
+    ReuseAddr => 1,
+);
+
+if ( !$m ) {
+    &eprint("Could not create new socket at TCP:9870 - $!");
+    exit 1;
+}
+
+$select->add($s);
+$select->add($m);
+
+if ( !$foreground and !$debug ) {
+    $daemon = 1;    # Don't print any warning, error or info messages
+
+    #    if ( -f "/var/run/perceusd.pid" ) {
+    #        print "Perceus daemon already running!\n";
+    #        exit 1;
+    #    }
+    open( STDIN,   "/dev/null" );
+    open( STDOUT,  ">/dev/null" );
+    open( STDERR,  ">/dev/null" );
+    open( PIDFILE, ">/var/run/perceusd.pid" )
+      or &pprint( -1, "Could not create /var/run/perceusd.pid" );
+    print PIDFILE $$;
+    close PIDFILE;
+    fork and exit;
+}
+else {
+    &dprint("Debug enabled, not gonna fork()\n");
+}
+
+$0 = "perceusd";
+
+# Update the ethers file
+$db{"hostname"} = &opendb( "hostname", O_RDWR | O_CREAT );
+&write_ethers( $db{"hostname"} );
+$db{"hostname"}->closedb();
+
+&dprint("Starting main loop");
+while ($critical_loop) {
+    my $timeleft = $timeout + $time - gettimeofday;
+
+    my @ready = $select->can_read($timeleft);
+
+    if ( $timeleft <= 0 ) {
+        $time = scalar(gettimeofday);
+        foreach my $fileno ( keys %{ $data{"STATUSWATCH"} } ) {
+            my $sock = \$data{"STATUSWATCH"}{$fileno}{"SOCK"};
+            $sock->syswrite(
+                sprintf(
+"\r %-7d  %7d   %4.3f   %4.3f   %4.3f   %-5d  %-5d  %4.2f                       \n",
+                    $data{"STATISTICS"}{"TOTAL"}{"TOTAL_NODE_CONNECTIONS"}
+                      || "0",
+                    $data{"STATISTICS"}{"TOTAL"}{"UNIQUE_NODE_CONNECTIONS"}
+                      || "0",
+                    $data{"STATISTICS"}{"TOTAL"}{"MAX"}      || "0",
+                    $data{"STATISTICS"}{"TOTAL"}{"MIN"}      || "0",
+                    $data{"STATISTICS"}{"TOTAL"}{"AVERAGE"}  || "0",
+                    $data{"STATISTICS"}{"INTERVAL"}{"TOTAL"} || "0",
+                    "0",
+                    $data{"STATISTICS"}{"INTERVAL"}{"TOTAL"}
+                    ? $data{"STATISTICS"}{"INTERVAL"}{"TOTAL"} / (
+                        gettimeofday - $data{"STATISTICS"}{"INTERVAL"}{"TIME"}
+                      )
+                    : "0",
+                )
+            );
+            $sock->syswrite($prompt);
+        }
+        $data{"STATISTICS"}{"INTERVAL"}{"TOTAL"} = 0;
+        $data{"STATISTICS"}{"INTERVAL"}{"TIME"}  = gettimeofday;
+        foreach my $fileno ( keys %{ $data{"CONNECTIONS"} } ) {
+            if ( exists( $data{"CONNECTIONS"}{$fileno}{"TIME"} )
+                and $data{"CONNECTIONS"}{$fileno}{"TIME"} + 15 < gettimeofday )
+            {
+                my $sock   = \$data{"CONNECTIONS"}{$fileno}{"SOCK"};
+                my $ipaddr = $data{"CONNECTIONS"}{$fileno}{"IPADDR"}
+                  || "unknown";
+                my $hostname = $data{"CONNECTIONS"}{$fileno}{"HOSTNAME"}
+                  || $ipaddr;
+                my $state = $data{"CONNECTIONS"}{$fileno}{"STATE"} || "unknown";
+                my $time = sprintf( "%.4f",
+                    gettimeofday - $data{"CONNECTIONS"}{$fileno}{"TIME"} );
+                $select->remove($sock);
+                close($sock);
+                delete( $data{"CONNECTIONS"}{$fileno} );
+                &wprint("The reaper shutdown stale fileno $fileno");
+
+                foreach my $f ( keys %{ $data{"MONITORS"} } ) {
+                    if ( !exists( $data{"MONITORS"}{$f}{"SET"}{"ERRORS"} ) ) {
+                        next;
+                    }
+                    my $s = \$data{"MONITORS"}{$f}{"SOCK"};
+                    $s->syswrite(
+"\rWARNING: Connection $fileno from $hostname was closed due to inactivity.\n"
+                    );
+                    $s->syswrite($prompt);
+                }
+            }
+        }
+    }
+    if ( scalar(@ready) ) {
+        foreach my $sock (@ready) {
+            my $type   = ref($sock);
+            my $fileno = $sock->fileno();
+
+            if ( $sock == $s ) {
+                my $accept = $sock->accept();
+                $select->add($accept);
+                my $tmp_fileno = $accept->fileno();
+                my $sockaddr   = getpeername($accept);
+                my ( $port, $iaddr ) = sockaddr_in($sockaddr);
+                my $ipaddr    = inet_ntoa($iaddr);
+                my $ipaddrbin = addr2bin($ipaddr);
+
+                $data{"CONNECTIONS"}{$tmp_fileno}{"PEER"}      = "client";
+                $data{"CONNECTIONS"}{$tmp_fileno}{"TIME"}      = gettimeofday;
+                $data{"CONNECTIONS"}{$tmp_fileno}{"SOCK"}      = $$accept;
+                $data{"CONNECTIONS"}{$tmp_fileno}{"IPADDR"}    = $ipaddr;
+                $data{"CONNECTIONS"}{$tmp_fileno}{"IPADDRBIN"} = $ipaddrbin;
+
+                &dprint(
+"added new socket entry to select loop (ipaddr=$ipaddr, fileno=$tmp_fileno)"
+                );
+                $accept->syswrite("# PERCEUSD START\n");
+
+                foreach my $f ( keys %{ $data{"LOGWATCH"} } ) {
+                    if ( exists( $data{"MONITORS"}{$f}{"SET"}{"LOG"} )
+                        and "CONNECTION" !~
+                        /^$data{"MONITORS"}{$f}{"SET"}{"LOG"}$/i )
+                    {
+                        next;
+                    }
+                    if ( exists( $data{"MONITORS"}{$f}{"SET"}{"HOSTNAME"} )
+                        and $ipaddr !~
+                        /^$data{"MONITORS"}{$f}{"SET"}{"HOSTNAME"}$/ )
+                    {
+                        next;
+                    }
+                    my $s = \$data{"LOGWATCH"}{$f}{"SOCK"};
+                    $s->syswrite(
+                        sprintf(
+                            "\rCONNECTION :  %-5s %-25s %-15s\n",
+                            $tmp_fileno, $ipaddr, "client"
+                        )
+                    );
+                    $s->syswrite("Press [ENTER] when done: ");
+                }
+
+            }
+            elsif ( $sock == $m ) {
+                my $accept = $sock->accept();
+                $select->add($accept);
+                my $tmp_fileno = $accept->fileno();
+                my $sockaddr   = getpeername($accept);
+                my ( $port, $iaddr ) = sockaddr_in($sockaddr);
+                my $ipaddr = inet_ntoa($iaddr);
+                if ( $ipaddr =~ /^$controlport_allow$/ ) {
+                    $prompt                                     = "Perceus> ";
+                    $data{"CONNECTIONS"}{$tmp_fileno}{"PEER"}   = "control";
+                    $data{"CONNECTIONS"}{$tmp_fileno}{"SOCK"}   = $$accept;
+                    $data{"CONNECTIONS"}{$tmp_fileno}{"IPADDR"} = $ipaddr;
+                    $data{"MONITORS"}{$tmp_fileno} =
+                      \%{ $data{"CONNECTIONS"}{$tmp_fileno} };
+                    $accept->syswrite("Perceus control access port.\n");
+                    $accept->syswrite($prompt);
+
+                    foreach my $f ( keys %{ $data{"LOGWATCH"} } ) {
+                        if ( exists( $data{"MONITORS"}{$f}{"SET"}{"LOG"} )
+                            and "CONNECTION" !~
+                            /^$data{"MONITORS"}{$f}{"SET"}{"LOG"}$/i )
+                        {
+                            next;
+                        }
+                        if ( exists( $data{"MONITORS"}{$f}{"SET"}{"HOSTNAME"} )
+                            and $ipaddr !~
+                            /^$data{"MONITORS"}{$f}{"SET"}{"HOSTNAME"}$/ )
+                        {
+                            next;
+                        }
+                        my $s = \$data{"LOGWATCH"}{$f}{"SOCK"};
+                        $s->syswrite(
+                            sprintf(
+                                "\rCONNECTION :  %-5s %-25s %-15s\n",
+                                $tmp_fileno, $ipaddr, "control"
+                            )
+                        );
+                        $s->syswrite("Press [ENTER] when done: ");
+                    }
+                    &dprint("Opening control socket");
+                    push( @sel,
+                        "Opening control socket ($tmp_fileno) from $ipaddr" );
+                }
+                else {
+                    $accept->syswrite("Perceus control access denied!\n");
+                    $select->remove($accept);
+                    $accept->close();
+                    &iprint(
+                        "Denied access to Perceus control socket from $ipaddr");
+                    push( @sel,
+"Access denied to control socket ($tmp_fileno) from $ipaddr"
+                    );
+                }
+
+            }
+            else {
+
+                my $readbuffer;
+                my $read    = 0;
+                my $readlen = 0;
+                my $packet_buff;
+                my $length = 0;
+
+                # Read from socket into a buffer
+                do {
+                    my $tmpbuff;
+                    $readlen = $sock->sysread( $tmpbuff, 1024 ) || 0;
+                    $read += $readlen;
+                    $packet_buff .= $tmpbuff;
+                } while ( $readlen == 1024 );
+
+                #                # If this is an INET socket ...
+                if (    $type eq "IO::Socket::INET"
+                    and $data{"CONNECTIONS"}{$fileno}{"PEER"} eq "client" )
+                {
+                    my $NodeID;
+                    my $hostname;
+
+                    if ( !$packet_buff ) {
+                        $select->remove($sock);
+                        $sock->close();
+                        delete( $data{"CONNECTIONS"}{$fileno} );
+                    }
+
+                    # Preload cached info
+                    my $ipaddr    = $data{"CONNECTIONS"}{$fileno}{"IPADDR"};
+                    my $ipaddrbin = $data{"CONNECTIONS"}{$fileno}{"IPADDRBIN"};
+
+                    &dprint(
+"Parsing command arguments (ipaddr=$ipaddr, fileno=$fileno): '$packet_buff'\n"
+                    );
+
+                    my ( $command, @Args ) = split( /\s+/, $packet_buff );
+
+                    # Skip based on some baseline sanity
+                    if ( !$command or !$fileno ) {
+                        next;
+                    }
+
+                    &dprint("Parsing provisiond's arguments (@Args)\n");
+                    my $Args = join( ' ', @Args );
+
+                    my %args;
+                    my $val;
+
+                    foreach $val ( split( /\s+/, $Args ) ) {
+                        my ( $f1, $f2 ) = split( /=/, $val );
+                        $args{$f1} = $f2;
+                    }
+
+                    if ( exists( $args{"nodeid"} ) ) {
+                        &dprint(
+"Overriding NodeID with client supplied ID: '$args{nodeid}'"
+                        );
+                        $NodeID = uc( $args{"nodeid"} );
+                    }
+                    else {
+                        &dprint("Doing arp lookup on '$ipaddr'\n");
+                        $NodeID = uc( Net::ARP::arp_lookup( $eth, $ipaddr ) );
+                    }
+
+                    if ( $command eq "ping" ) {
+                        my $response = $Args || "ping";
+                        &iprint(
+"Ping received from $ipaddr, replying with $response."
+                        );
+                        $sock->syswrite("$response\n");
+                        &dprint("Shutting down the client socket");
+                        shutdown( $sock, 2 );
+                        &dprint("Connection closed\n");
+                        $select->remove($sock);
+                        close($sock);
+                        &dprint("Connection closed\n");
+                        next;
+                    }
+                    elsif ( !$NodeID or $NodeID eq "UNKNOWN" ) {
+                        &wprint(
+"Could not resolve node's ID/MAC addr from $ipaddr, skipping."
+                        );
+                    }
+                    elsif ( $command !~ /^\w+$/ ) {
+                        &wprint(
+"Could not parse a reasonable provisionary state/command... Skipping"
+                        );
+                    }
+                    elsif ( $command eq "log" ) {
+                        $db{"hostname"} =
+                          &opendb( "hostname", O_RDWR | O_CREAT );
+                        $hostname = $db{"hostname"}->get($NodeID);
+                        $db{"hostname"}->closedb();
+                        &iprint(
+                            "Message from $hostname: " . join( " ", @Args ) );
+                        &dprint("Shutting down the client socket");
+                        $select->remove($sock);
+                        close($sock);
+                        &dprint("Connection closed\n");
+                        next;
+                    }
+                    else {
+
+                        $db{"hostname"} =
+                          &opendb( "hostname", O_RDWR | O_CREAT );
+                        $hostname = $db{"hostname"}->get($NodeID);
+                        $db{"hostname"}->closedb();
+
+                        if ( $command eq "init" ) {
+                            &dprint("Entering node init\n");
+                            if ( !$hostname ) {
+                                $hostname =
+                                  &node_add( $NodeID, $args{nodename} );
+                                if ($hostname) {
+                                    &iprint(
+"Added new node to database '$hostname', NodeID=$NodeID\n"
+                                    );
+                                    push( @sel,
+"Added new node to database '$hostname', NodeID=$NodeID"
+                                    );
+                                }
+                                else {
+                                    &wprint(
+"Could not add node to database, check defaults.conf!"
+                                    );
+                                    $sock->syswrite(
+                                        "echo \"Could not add node to DB.\"\n");
+                                    $select->remove($sock);
+                                    close($sock);
+                                    &dprint("Connection closed\n");
+                                    next;
+                                }
+                            }
+                            &iprint("Provisioning '$hostname' now...\n");
+                        }
+                        if ($hostname) {
+                            my $fd;
+                            open( $fd,
+"$Perceus_Include::libexecdir/scriptrunner $command $NodeID |"
+                            );
+                            &dprint(
+"Started scriptrunner ($Perceus_Include::libexecdir/scriptrunner $command $NodeID)"
+                            );
+                            $select->add($fd);
+                            $data{"SCRIPTRUNNER"}{ $fd->fileno } = $$sock;
+
+                            $db{"status"} =
+                              &opendb( "status", O_RDWR | O_CREAT );
+                            $db{"status"}->set( $NodeID, $command );
+                            $db{"status"}->closedb();
+
+                            $db{"ipaddr"} =
+                              &opendb( "ipaddr", O_RDWR | O_CREAT );
+                            $db{"ipaddr"}->set( $NodeID, $ipaddrbin );
+                            $db{"ipaddr"}->closedb();
+
+                            $db{"lastcontact"} =
+                              &opendb( "lastcontact", O_RDWR | O_CREAT );
+                            $db{"lastcontact"}->set( $NodeID, time() );
+                            $db{"lastcontact"}->closedb();
+
+                            $data{"CONNECTIONS"}{$fileno}{"STATE"} = $command;
+                            $data{"CONNECTIONS"}{$fileno}{"HOSTNAME"} =
+                              $hostname;
+
+                            foreach my $f ( keys %{ $data{"LOGWATCH"} } ) {
+                                if (
+                                    exists(
+                                        $data{"MONITORS"}{$f}{"SET"}{"LOG"}
+                                    )
+                                    and "REQUEST" !~
+                                    /^$data{"MONITORS"}{$f}{"SET"}{"LOG"}$/i
+                                  )
+                                {
+                                    next;
+                                }
+                                if (
+                                    exists(
+                                        $data{"MONITORS"}{$f}{"SET"}{"HOSTNAME"}
+                                    )
+                                    and $hostname !~
+                                    /^$data{"MONITORS"}{$f}{"SET"}{"HOSTNAME"}$/
+                                  )
+                                {
+                                    next;
+                                }
+                                if (
+                                    exists(
+                                        $data{"MONITORS"}{$f}{"SET"}{"STATE"}
+                                    )
+                                    and $command !~
+                                    /^$data{"MONITORS"}{$f}{"SET"}{"STATE"}$/i
+                                  )
+                                {
+                                    next;
+                                }
+                                if (
+                                    !exists(
+                                        $data{"MONITORS"}{$f}{"SET"}{"LOG"}
+                                    )
+                                    or uc( $data{"MONITORS"}{$f}{"SET"}{"LOG"} )
+                                    eq "REQUEST"
+                                  )
+                                {
+                                    my $s = \$data{"LOGWATCH"}{$f}{"SOCK"};
+                                    $s->syswrite(
+                                        sprintf(
+"\rREQUEST    :  %-5s %-25s %-15s\n",
+                                            $fileno, $hostname, $command
+                                        )
+                                    );
+                                    $s->syswrite("Press [ENTER] when done: ");
+                                }
+                            }
+                            push( @sel,
+"Provision request: hostname=$hostname, state=$command"
+                            );
+                            if (
+                                !exists(
+                                    $data{"STATISTICS"}{"UNIQUE"}{$hostname}
+                                )
+                              )
+                            {
+                                $data{"STATISTICS"}{"TOTAL"}
+                                  {"UNIQUE_NODE_CONNECTIONS"}++;
+                            }
+                            $data{"STATISTICS"}{"UNIQUE"}{$hostname}{"TOTAL"}++;
+                            $data{"STATISTICS"}{"TOTAL"}
+                              {"TOTAL_NODE_CONNECTIONS"}++;
+
+                            $select->remove($sock);
+                        }
+                    }
+
+                }
+                elsif ( $type eq "IO::Socket::INET"
+                    and $data{"CONNECTIONS"}{$fileno}{"PEER"} eq "control" )
+                {
+
+                    if (  !$packet_buff
+                        or $packet_buff =~ /^q(uit)?/
+                        or $packet_buff eq "" )
+                    {
+                        &dprint("Closing control socket");
+                        $select->remove($sock);
+                        $sock->close();
+                        delete( $data{"CONNECTIONS"}{$fileno} );
+                        delete( $data{"MONITORS"}{$fileno} );
+                        delete( $data{"LOGWATCH"}{$fileno} );
+                        delete( $data{"STATUSWATCH"}{$fileno} );
+                    }
+                    elsif ( $packet_buff =~ /^/
+                        and exists( $data{"LOGWATCH"}{$fileno} ) )
+                    {
+                        $sock->syswrite("Disabled monitoring!\n");
+                        delete( $data{"LOGWATCH"}{$fileno} );
+                        delete( $data{"CONNECTIONS"}{$fileno}{"BUSY"} );
+                        $prompt = "Perceus> ";
+                    }
+                    elsif ( $packet_buff =~ /^/
+                        and exists( $data{"STATUSWATCH"}{$fileno} ) )
+                    {
+                        $sock->syswrite("Disabled monitoring!\n");
+                        delete( $data{"STATUSWATCH"}{$fileno} );
+                        delete( $data{"CONNECTIONS"}{$fileno}{"BUSY"} );
+                        $prompt = "Perceus> ";
+                    }
+                    elsif ( exists( $data{"CONNECTIONS"}{$fileno}{"BUSY"} ) ) {
+                        $sock->syswrite(
+                            "Process busy, type \"quit\" to exit.\n");
+                    }
+                    elsif ( $packet_buff =~ /^sel\s?([0-9]*)/ ) {
+                        foreach my $line (@sel) {
+                            $sock->syswrite("-> $line\n");
+                        }
+                    }
+                    elsif ( $packet_buff =~ /^clear/ ) {
+                        delete( $data{"STATISTICS"} );
+                    }
+                    elsif ( $packet_buff =~ /^l(og)?/ ) {
+                        $sock->syswrite("Enabling real time provision log.\n");
+                        $data{"LOGWATCH"}{$fileno} =
+                          \%{ $data{"CONNECTIONS"}{$fileno} };
+                        $data{"CONNECTIONS"}{$fileno}{"BUSY"} = 1;
+                        $prompt = "Press [ENTER] when done: ";
+                    }
+                    elsif ( $packet_buff =~ /^s(tat(us)?)?/ ) {
+                        $sock->syswrite(
+                            "Enabling real time status monitoring.\n");
+                        $sock->syswrite(
+"    Connections   |       Latency (s)     |    Last interval\n"
+                        );
+                        $sock->syswrite(
+" Total       Uniq | MAX      MIN      AVG | Total  Delta  avg/sec\n"
+                        );
+                        $sock->syswrite(
+"--------------------------------------------------------------------\n"
+                        );
+
+                        $data{"STATUSWATCH"}{$fileno} =
+                          \%{ $data{"CONNECTIONS"}{$fileno} };
+                        $data{"CONNECTIONS"}{$fileno}{"BUSY"} = 1;
+                        $prompt = "Press [ENTER] when done: ";
+                    }
+                    elsif ( $packet_buff =~ /^print/ ) {
+                        foreach my $key (
+                            keys %{ $data{"MONITORS"}{$fileno}{"SET"} } )
+                        {
+                            $sock->syswrite(
+                                "$key=$data{MONITORS}{$fileno}{SET}{$key}\n");
+                        }
+                    }
+                    elsif ( $packet_buff =~
+                        /^set ([a-zA-Z_]+)=([a-zA-Z0-9_\-\.i\|]+)/ )
+                    {
+                        my $tmp = uc($1);
+                        $data{"MONITORS"}{$fileno}{"SET"}{$tmp} = $2;
+                    }
+                    elsif ( $packet_buff =~ /^unset ([a-zA-Z_]+)/ ) {
+                        my $tmp = uc($1);
+                        delete( $data{"MONITORS"}{$fileno}{"SET"}{$tmp} );
+                    }
+                    elsif ( $packet_buff =~ /^h(elp)?/ ) {
+                        $sock->syswrite("\n");
+                        $sock->syswrite("Supported commands:\n");
+                        $sock->syswrite("   log         Watch real time log\n");
+                        $sock->syswrite(
+                            "   status      Real time statistics\n");
+                        $sock->syswrite(
+                            "   set         Set environment variables\n");
+                        $sock->syswrite(
+                            "   sel         Print the system event log\n");
+                        $sock->syswrite(
+                            "   unset       Unset environment variables\n");
+                        $sock->syswrite(
+"   print       Print defined environment variables\n"
+                        );
+                        $sock->syswrite(
+"   clear       Clear all counters and logs and start over\n"
+                        );
+                        $sock->syswrite("   help        Usage summary\n");
+                        $sock->syswrite(
+                            "   quit        Close control socket\n");
+                        $sock->syswrite("\n");
+                        $sock->syswrite("Setable environment variables:\n");
+                        $sock->syswrite(
+                            "   log         Log messages you wish to see\n");
+                        $sock->syswrite(
+"   hostname    Node hostnames you wish to monitor\n"
+                        );
+                        $sock->syswrite(
+                            "   state       Node provisionary states\n");
+                        $sock->syswrite(
+"   errors      Do you wish to monitor errors (boolean)\n"
+                        );
+                        $sock->syswrite("\n");
+                    }
+                    elsif ( $packet_buff =~ /^/ ) {
+                    }
+                    else {
+                        $sock->syswrite("Unknown command: $packet_buff\n");
+                    }
+
+                    $sock->syswrite($prompt);
+
+                }
+                elsif ( $type eq "GLOB" ) {
+                    my $client_sock;
+                    if ( exists( $data{"SCRIPTRUNNER"}{$fileno} ) ) {
+                        $client_sock = \$data{"SCRIPTRUNNER"}{$fileno};
+                    }
+                    if ( !$packet_buff or !$client_sock ) {
+                        &dprint("scriptrunner returned (fileno=$fileno)");
+                        if (
+                            exists(
+                                $data{"CONNECTIONS"}{ $client_sock->fileno }
+                            )
+                          )
+                        {
+                            my $client_fileno = $client_sock->fileno;
+                            my $ipaddr =
+                              $data{"CONNECTIONS"}{$client_fileno}{"IPADDR"}
+                              || "unknown";
+                            my $state =
+                              $data{"CONNECTIONS"}{$client_fileno}{"STATE"}
+                              || "unknown";
+                            my $hostname =
+                              $data{"CONNECTIONS"}{$client_fileno}{"HOSTNAME"}
+                              || $ipaddr;
+                            my $time = sprintf( "%.4f",
+                                gettimeofday -
+                                  $data{"CONNECTIONS"}{$client_fileno}
+                                  {"TIME"} );
+                            &dprint(
+"Closing socket (ipaddr=$ipaddr, fileno=$client_fileno)"
+                            );
+                            delete( $data{"CONNECTIONS"}{$client_fileno} );
+                            foreach my $f ( keys %{ $data{"LOGWATCH"} } ) {
+
+                                if (
+                                    exists(
+                                        $data{"MONITORS"}{$f}{"SET"}{"LOG"}
+                                    )
+                                    and "PROVISION" !~
+                                    /^$data{"MONITORS"}{$f}{"SET"}{"LOG"}$/i
+                                  )
+                                {
+                                    next;
+                                }
+                                if (
+                                    exists(
+                                        $data{"MONITORS"}{$f}{"SET"}{"HOSTNAME"}
+                                    )
+                                    and $hostname !~
+                                    /^$data{"MONITORS"}{$f}{"SET"}{"HOSTNAME"}$/
+                                  )
+                                {
+                                    next;
+                                }
+                                if (
+                                    exists(
+                                        $data{"MONITORS"}{$f}{"SET"}{"STATE"}
+                                    )
+                                    and $state !~
+                                    /^$data{"MONITORS"}{$f}{"SET"}{"STATE"}$/i
+                                  )
+                                {
+                                    next;
+                                }
+                                my $s = \$data{"LOGWATCH"}{$f}{"SOCK"};
+                                $s->syswrite(
+                                    sprintf(
+"\rPROVISION  :  %-5s %-25s %-15s %-15s\n",
+                                        $client_fileno, $hostname,
+                                        $state,         $time
+                                    )
+                                );
+                                $s->syswrite("Press [ENTER] when done: ");
+                            }
+                            $data{"STATISTICS"}{"TOTAL"}{"SCRIPT_COUNTER"}++;
+                            $data{"STATISTICS"}{"TOTAL"}{"LATENCY_SUM"} +=
+                              $time;
+                            $data{"STATISTICS"}{"INTERVAL"}{"TOTAL"}++;
+                            $data{"STATISTICS"}{"UNIQUE"}{$hostname}
+                              {"SCRIPT_COUNTER"}++;
+                            $data{"STATISTICS"}{"UNIQUE"}{$hostname}
+                              {"LATENCY_SUM"} += $time;
+                            $data{"STATISTICS"}{"TOTAL"}{"AVERAGE"} =
+                              $data{"STATISTICS"}{"TOTAL"}{"LATENCY_SUM"} /
+                              $data{"STATISTICS"}{"TOTAL"}{"SCRIPT_COUNTER"};
+                            $data{"STATISTICS"}{"UNIQUE"}{$hostname}
+                              {"AVERAGE"} =
+                              $data{"STATISTICS"}{"UNIQUE"}{$hostname}
+                              {"LATENCY_SUM"} /
+                              $data{"STATISTICS"}{"UNIQUE"}{$hostname}
+                              {"SCRIPT_COUNTER"};
+
+                            if ( !exists( $data{"STATISTICS"}{"TOTAL"}{"MAX"} )
+                                or $time > $data{"STATISTICS"}{"TOTAL"}{"MAX"} )
+                            {
+                                $data{"STATISTICS"}{"TOTAL"}{"MAX"} = $time;
+                            }
+                            if ( !exists( $data{"STATISTICS"}{"TOTAL"}{"MIN"} )
+                                or $time < $data{"STATISTICS"}{"TOTAL"}{"MIN"} )
+                            {
+                                $data{"STATISTICS"}{"TOTAL"}{"MIN"} = $time;
+                            }
+                            $client_sock->syswrite("# PROVISIOND END\n");
+                            $select->remove($sock);
+                            $select->remove($client_sock);
+                            if ( close($sock) ) {
+                                $data{"STATISTICS"}{"TOTAL"}{"SUCCESS"}++;
+                                push( @sel,
+"Satisified provision request: hostname=$hostname, state=$state"
+                                );
+                            }
+                            else {
+                                $data{"STATISTICS"}{"TOTAL"}{"ERRORS"}++;
+                                &wprint("Error closing scriptrunner: $!");
+                                foreach my $f ( keys %{ $data{"MONITORS"} } ) {
+                                    if (
+                                        !exists(
+                                            $data{"MONITORS"}{$f}{"SET"}
+                                              {"ERRORS"}
+                                        )
+                                      )
+                                    {
+                                        next;
+                                    }
+                                    my $s = \$data{"MONITORS"}{$f}{"SOCK"};
+                                    $s->syswrite(
+"\rWARNING: Scriptrunner exited with an issue!\n"
+                                    );
+                                    $s->syswrite($prompt);
+                                }
+                                push( @sel,
+"WARNING: Scriptrunner exited with an issue!"
+                                );
+                            }
+                        }
+                        $client_sock->close();
+                    }
+                    else {
+                        $client_sock->syswrite($packet_buff);
+                    }
+                }
+
+            }
+
+        }
+
+    }
+
+}
+

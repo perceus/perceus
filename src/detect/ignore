@@ -1,0 +1,41 @@
+# list of modules that are considered obsolete or not to be returned by
+# detect (and thus the auto-probing part of the boot sequence).
+#
+# If there are modules that should be added to this list, please file a
+# bug report at http://bugzilla.caosity.org/.
+
+8139cp
+arcfb
+aty128fb
+atyfb
+backlight
+cirrusfb
+fb_ddc
+g450_pll
+gx1fb
+hgafb
+i2c-matroxfb
+intelfb
+kyrofb
+lcd
+macmodes
+matroxfb_DAC1064
+matroxfb_Ti3026
+matroxfb_accel
+matroxfb_base
+matroxfb_crtc2
+matroxfb_g450
+matroxfb_maven
+matroxfb_misc
+neofb
+nvidiafb
+radeonfb
+rivafb
+s1d13xxxfb
+savagefb
+sstfb
+tdfxfb
+tridentfb
+vga16fb
+vgastate
+

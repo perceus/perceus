@@ -1,0 +1,123 @@
+#!/bin/bash
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+# SuSE compatible Perceus init script
+
+# chkconfig: 345 95 05
+# description: provisiond
+# processname: provisiond
+# pidfile: /var/run/provisiond.pid
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+localstatedir=@localstatedir@
+sbindir=@sbindir@
+sysconfdir=@sysconfdir@
+libexecdir=@libexecdir@
+
+# source function library
+. /etc/rc.status
+
+rc_reset
+
+# source Perceus config if it exists
+if [ -f "/etc/sysconfig/provisiond" ]; then
+   . /etc/sysconfig/provisiond
+fi
+
+if [ -z "$MASTERIP" ]; then
+   MASTERIP=`sed -e '/masterip=/!d;s/.*masterip=\([^ ]\+\).*/\1/' /proc/cmdline`
+fi
+if [ -z "$MASTERIP" ]; then
+   MASTERIP=localhost
+fi
+
+if [ -z "$NODEID" ]; then
+   NODEID=""
+   # Uncomment NODEID to force a particular nodeID and maybe spoof a device (use
+   # this if you know what your doing!)
+   #NODEID="nodeid=`ethinfo -aq eth0`"
+fi
+
+EXITVAL=0
+
+start() {
+   local RETVAL=0
+   if [ -x "$sbindir/provisiond" ]; then
+      echo -n "Starting the Perceus client daemon (provisiond):"
+      $sbindir/provisiond -i 300 ${MASTERIP} ready $NODEID
+      rc_status -v
+      if [ $? -eq 0 ]; then
+         touch /var/lock/subsys/provisiond
+      else
+         RETVAL=1
+      fi
+   fi
+   return $RETVAL
+}
+
+stop() {
+   local RETVAL=0
+   if [ "x\$MASTERIP" != "x" ]; then
+      echo -n "Stopping the Perceus client daemon (provisiond):"
+      killproc provisiond
+      rc_status -v
+      if [ $? -eq 0 ]; then
+         rm -f /var/lock/subsys/provisiond
+      else
+         RETVAL=1
+      fi
+      # Tell the head node our best guess of what we're about to do
+      if test "$runlevel" = "0"; then
+         state="halt"
+      elif test "$runlevel" = "1"; then
+         state="single-user"
+      elif test "$runlevel" = "6"; then
+         state="reboot"
+      else
+         state="unmonitored"
+      fi
+      $sbindir/provisiond ${MASTERIP} $state $NODEID
+   fi
+   return $RETVAL
+}
+
+stats() {
+   checkproc -p /var/run/provisiond.pid provisiond
+   rc_status -v
+   return $?
+}
+
+case "$1" in
+  start)
+   start
+   EXITVAL=$?
+   ;;
+  stop)
+   stop
+   EXITVAL=$?
+   ;;
+  restart)
+   stop
+   start
+   EXITVAL=$?
+   ;;
+  condrestart)
+   if [ -f "/var/lock/subsys/provisiond" ]; then
+      stop
+      start
+      EXITVAL=$?
+   fi
+   ;;
+  status)
+   stats
+   EXITVAL=$?
+   ;;
+  *)
+   echo $"Usage: $0 {start|stop|restart|condrestart|reload|status}"
+   exit 1
+esac
+
+exit $EXITVAL

@@ -1,0 +1,112 @@
+#!/bin/bash
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+# Debian compatible Perceus init script
+
+### BEGIN INIT INFO
+# Provides:             perceusd
+# Required-Start:       $network $local_fs $remote_fs
+# Required-Stop:
+# Default-Start:        3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    Perceus cluster management daemon
+### END INIT INFO
+
+prefix=/usr
+exec_prefix=${prefix}
+localstatedir=${prefix}/var
+sbindir=${exec_prefix}/sbin
+sysconfdir=/etc
+libexecdir=${exec_prefix}/libexec
+
+# source Perceus config if it exists
+if [ -f "/etc/sysconfig/perceus" ]; then
+   . /etc/sysconfig/perceus
+fi
+
+# Check to see if Perceus has been configured
+if [ ! -d "$localstatedir/lib/perceus/database" ]; then
+   echo "You need to initialize Perceus before starting the services!"
+   exit 1
+fi
+
+# Check to see if Perceus DHCP service has been set
+if [ ! -f "/etc/perceus/dnsmasq.conf" ]; then
+   NO_NETWORK_MANAGER=1
+fi
+
+if [ "x$NO_LEASEFILE" = "xyes" -o "x$NO_LEASEFILE" = "x1" ]; then
+   RO_LEASE="--leasefile-ro"
+fi
+
+EXITVAL=0
+
+start() {
+   local RETVAL=0
+   if [ -z "$NO_NETWORK_MANAGER" -a -x $libexecdir/perceus/perceus-dnsmasq ]; then
+      DHCP_OPTS="$DHCP_OPTS $RO_LEASE --dhcp-leasefile=$localstatedir/lib/perceus/dhcpd.leases --conf-file=/etc/perceus/dnsmasq.conf"
+      echo "Starting perceus network manager."
+      /sbin/start-stop-daemon --start --exec $libexecdir/perceus/perceus-dnsmasq -- $DHCP_OPTS
+      if [ $? -ne "0" ]; then
+         RETVAL=1
+      fi
+   fi
+   if [ -x ${sbindir}/perceusd ]; then
+      echo "Starting perceusd."
+      /sbin/start-stop-daemon --start --exec ${sbindir}/perceusd
+      if [ $? -ne "0" ]; then
+         RETVAL=1
+      fi
+   fi
+   return $RETVAL
+}
+
+stop() {
+   local RETVAL=0
+   if [ -z "$NO_NETWORK_MANAGER" ]; then
+      echo "Stopping perceus network manager."
+      /sbin/start-stop-daemon --stop --name perceus-dnsmasq
+      if [ $? -ne "0" ]; then
+         RETVAL=1
+      fi
+   fi
+   echo "Stopping perceusd."
+   /sbin/start-stop-daemon --stop --name perceusd
+   if [ $? -ne "0" ]; then
+      RETVAL=1
+   fi
+   return $RETVAL
+}
+
+hup() {
+   if [ -z "$NO_NETWORK_MANAGER" ]; then
+      echo "Sending HUP to perceus-dnsmasq..."
+      killall -HUP perceus-dnsmasq
+   fi
+}
+
+case "$1" in
+  start)
+   start
+   EXITVAL=$?
+   ;;
+  stop)
+   stop
+   EXITVAL=$?
+   ;;
+  restart)
+   stop
+   start
+   EXITVAL=$?
+   ;;
+  reload)
+   hup
+   ;;
+  *)
+   echo $"Usage: $0 {start|stop|restart|reload}"
+   exit 1
+esac
+
+exit $EXITVAL

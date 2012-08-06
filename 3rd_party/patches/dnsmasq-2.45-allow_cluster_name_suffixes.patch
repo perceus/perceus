@@ -1,0 +1,31 @@
+diff -Nur -x '*.orig' -x '*.rej' dnsmasq-2.45/src/dhcp.c mezzanine_patched_dnsmasq-2.45/src/dhcp.c
+--- dnsmasq-2.45/src/dhcp.c	2008-07-20 11:26:07 -0700
++++ mezzanine_patched_dnsmasq-2.45/src/dhcp.c	2009-06-16 13:12:55 -0700
+@@ -938,15 +938,5 @@
+ /* return illegal domain or NULL if OK */
+ char *strip_hostname(char *hostname)
+ {
+-  char *dot = strchr(hostname, '.');
+- 
+-  if (!dot)
+-    return NULL;
+-  
+-  *dot = 0; /* truncate */
+-  
+-  if (*(dot+1) && (!daemon->domain_suffix || !hostname_isequal(dot+1, daemon->domain_suffix)))
+-    return dot+1;
+-  
+   return NULL;
+ }
+diff -Nur -x '*.orig' -x '*.rej' dnsmasq-2.45/src/util.c mezzanine_patched_dnsmasq-2.45/src/util.c
+--- dnsmasq-2.45/src/util.c	2008-07-20 11:26:07 -0700
++++ mezzanine_patched_dnsmasq-2.45/src/util.c	2009-06-16 13:12:30 -0700
+@@ -132,7 +132,7 @@
+     {
+       if (c == '.')
+ 	dotgap = 0;
+-      else if (!legal_char(c) || (++dotgap > MAXLABEL))
++      else if (!legal_char(c))
+ 	return 0;
+       else if (c != ' ')
+ 	nowhite = 1;

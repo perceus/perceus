@@ -1,0 +1,47 @@
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/perceus/!svn/ver/2402/1.6/scripts/bin
+END
+perceus-htpasswd
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/perceus/!svn/ver/2402/1.6/scripts/bin/perceus-htpasswd
+END
+ssh-perceus
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/perceus/!svn/ver/2148/1.6/scripts/bin/ssh-perceus
+END
+perceus
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/perceus/!svn/ver/2371/1.6/scripts/bin/perceus
+END
+perceus-init
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/perceus/!svn/ver/2346/1.6/scripts/bin/perceus-init
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/perceus/!svn/ver/2346/1.6/scripts/bin/Makefile.am
+END
+perceusd
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/perceus/!svn/ver/2387/1.6/scripts/bin/perceusd
+END
+scriptrunner
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/perceus/!svn/ver/2351/1.6/scripts/bin/scriptrunner
+END

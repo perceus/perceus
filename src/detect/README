@@ -1,0 +1,14 @@
+detect is an example of how simple hardware probing actually is in Linux! The
+concept is simple... pull the vendor and model ID from each card that is
+plugged into the systems PCI bus, and then use that to compare to the kernel's
+pcimap that correlates the ID's to kernel modules. Then show the needed kernel
+modules for each of the installed PCI devices.
+
+The goal of detect is to be a very lightweight simple solution to hardware
+probing. The engine itself is detect, and there can be helper scripts/tools
+that use detect to build things (like modprobe.conf).
+
+Have fun.
+
+Greg Kurtzer <gmk at caosity dot org>
+

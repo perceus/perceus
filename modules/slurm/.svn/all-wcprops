@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/perceus/!svn/ver/2148/1.6/modules/slurm
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/perceus/!svn/ver/2148/1.6/modules/slurm/Makefile.am
+END
+defaultroles
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/perceus/!svn/ver/2148/1.6/modules/slurm/defaultroles
+END
+50-slurm.sh
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/perceus/!svn/ver/2148/1.6/modules/slurm/50-slurm.sh
+END

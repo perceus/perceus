@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/perceus/!svn/ver/2333/1.6/modules/groupfile
+END
+activate
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/perceus/!svn/ver/2148/1.6/modules/groupfile/activate
+END
+50-group.sh
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/perceus/!svn/ver/2333/1.6/modules/groupfile/50-group.sh
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/perceus/!svn/ver/2148/1.6/modules/groupfile/Makefile.am
+END
+defaultroles
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/perceus/!svn/ver/2148/1.6/modules/groupfile/defaultroles
+END

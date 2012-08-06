@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/perceus/!svn/ver/2399/1.6/3rd_party/configs
+END
+kernel-x86_64.config
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/perceus/!svn/ver/2390/1.6/3rd_party/configs/kernel-x86_64.config
+END
+busybox-default.config
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/perceus/!svn/ver/2399/1.6/3rd_party/configs/busybox-default.config
+END
+dnsmasq_config.h
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/configs/dnsmasq_config.h
+END
+kernel-i386.config
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/perceus/!svn/ver/2390/1.6/3rd_party/configs/kernel-i386.config
+END
+busybox-uclibc.config
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/configs/busybox-uclibc.config
+END

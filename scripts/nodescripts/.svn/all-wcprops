@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/perceus/!svn/ver/2364/1.6/scripts/nodescripts
+END
+00-init.sh
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/perceus/!svn/ver/2364/1.6/scripts/nodescripts/00-init.sh
+END
+99-zzzlast.sh
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/perceus/!svn/ver/2148/1.6/scripts/nodescripts/99-zzzlast.sh
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/perceus/!svn/ver/2148/1.6/scripts/nodescripts/Makefile.am
+END

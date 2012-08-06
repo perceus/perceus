@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/perceus/!svn/ver/2396/1.6/scripts/lib/Perceus/Interface
+END
+3rdParty.pm
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/perceus/!svn/ver/2148/1.6/scripts/lib/Perceus/Interface/3rdParty.pm
+END
+Cmdline.pm
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/svn/perceus/!svn/ver/2396/1.6/scripts/lib/Perceus/Interface/Cmdline.pm
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/svn/perceus/!svn/ver/2148/1.6/scripts/lib/Perceus/Interface/Makefile.am
+END

@@ -1,0 +1,143 @@
+K 25
+svn:wc:ra_dav:version-url
+V 41
+/svn/perceus/!svn/ver/2148/1.6/src/detect
+END
+ignore
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/perceus/!svn/ver/2148/1.6/src/detect/ignore
+END
+AUTHORS
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/perceus/!svn/ver/2148/1.6/src/detect/AUTHORS
+END
+readconfs.c
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/perceus/!svn/ver/2148/1.6/src/detect/readconfs.c
+END
+configure.in
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/perceus/!svn/ver/2148/1.6/src/detect/configure.in
+END
+ChangeLog
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/perceus/!svn/ver/2148/1.6/src/detect/ChangeLog
+END
+detect.c
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/perceus/!svn/ver/2148/1.6/src/detect/detect.c
+END
+README
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/perceus/!svn/ver/2148/1.6/src/detect/README
+END
+detect.h
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/perceus/!svn/ver/2148/1.6/src/detect/detect.h
+END
+util.c
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/perceus/!svn/ver/2148/1.6/src/detect/util.c
+END
+getids.c
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/perceus/!svn/ver/2148/1.6/src/detect/getids.c
+END
+config.h.in
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/perceus/!svn/ver/2148/1.6/src/detect/config.h.in
+END
+getmod.c
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/perceus/!svn/ver/2148/1.6/src/detect/getmod.c
+END
+classids
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/svn/perceus/!svn/ver/2148/1.6/src/detect/classids
+END
+updates
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/perceus/!svn/ver/2148/1.6/src/detect/updates
+END
+acinclude.m4
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/perceus/!svn/ver/2148/1.6/src/detect/acinclude.m4
+END
+INSTALL
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/perceus/!svn/ver/2148/1.6/src/detect/INSTALL
+END
+defs.h
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/perceus/!svn/ver/2148/1.6/src/detect/defs.h
+END
+COPYING
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/perceus/!svn/ver/2148/1.6/src/detect/COPYING
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/perceus/!svn/ver/2148/1.6/src/detect/Makefile.am
+END
+modconf-generator
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/perceus/!svn/ver/2148/1.6/src/detect/modconf-generator
+END
+pcimap
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/perceus/!svn/ver/2148/1.6/src/detect/pcimap
+END
+autogen.sh
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/perceus/!svn/ver/2148/1.6/src/detect/autogen.sh
+END
+NEWS
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/perceus/!svn/ver/2148/1.6/src/detect/NEWS
+END

@@ -1,0 +1,8 @@
+# This is a list of class ID's to use over and above the defaults listed in
+# pci_ids.h. Format is simple... field1 is the class ID that you want to
+# assign to, and field2 is the name that should be assigned to that class.
+#
+# If there are classes that should be added to this list, please file a
+# bug report at http://bugzilla.caosity.org/.
+
+0x040300 AUDIO

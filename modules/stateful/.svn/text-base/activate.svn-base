@@ -1,0 +1,39 @@
+#!/bin/bash
+
+DIR=/etc/perceus/modules/stateful
+
+if [ -d $DIR ]; then
+   echo "$DIR exists, deleting contents..."
+   rm -rf $DIR/*
+fi
+
+mkdir -p $DIR/ready
+
+for dir in vnfs group node; do
+   mkdir -p $DIR/reinit/$dir
+done
+
+cat <<EOF
+
+Perceus Module for Stateful Provisioning:
+
+Please make sure that provisiond is installed in the VNFS images you would
+like to provision statefully, otherwise stateful provisioning would not
+work correctly. To re-initialize a node that is currently running, touch
+a file in /etc/perceus/modules/stateful/reinit/{vnfs,group,node} corresponding
+to the node's VNFS image name, group name or node name.
+
+For example, to re-initialize nodes assigned to the VNFS image "centos5.3.stateful", do:
+
+ # touch /etc/perceus/modules/stateful/reinit/vnfs/centos5.3.stateful
+
+To re-initialize nodes in the group "cluster", do:
+
+ # touch /etc/perceus/modules/stateful/reinit/group/cluster
+
+To re-initialize a node named "node22", do:
+
+ # touch /etc/perceus/modules/stateful/reinit/node/node22
+EOF
+
+echo

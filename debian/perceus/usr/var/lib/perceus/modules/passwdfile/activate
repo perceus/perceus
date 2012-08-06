@@ -1,0 +1,29 @@
+#!/bin/sh
+
+BASEDIR=`dirname $0`
+
+DIR=/etc/perceus/modules/passwdfile
+
+if [ -d "$DIR" ]; then
+   exit
+fi
+
+mkdir -p $DIR
+cp /etc/passwd $DIR/all
+
+ln -s $BASEDIR/perceus-useradd /usr/bin/
+
+cat <<EOF
+This module is used for customizing the user accounts on the nodes when they
+connect to the Perceus server in the provisionary states that you have
+defined. Add the required passwd file entries to the appropriate files in:
+
+   $DIR
+
+The files will automatically get syncronized the next time the node "checks
+in". The passwd file "all" in the above directory contains the default
+entries that all nodes will get (copied from the master). Modify this as
+needed for global accounts, and add more specific entries to other files if
+desired.
+
+EOF

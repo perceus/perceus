@@ -1,0 +1,15 @@
+diff -ru kexec-tools-testing-20080324/kexec/Makefile kexec-tools-testing-20080324.patched/kexec/Makefile
+--- kexec-tools-testing-20080324/kexec/Makefile	2008-03-20 21:16:28 -0700
++++ kexec-tools-testing-20080324.patched/kexec/Makefile	2008-07-13 20:02:21 -0700
+@@ -53,10 +53,9 @@
+ 
+ -include $(KEXEC_DEPS)
+ 
+-$(KEXEC): LDFLAGS+=$(LIBS)
+ $(KEXEC): $(KEXEC_OBJS) $(UTIL_LIB)
+ 	@$(MKDIR) -p $(@D)
+-	$(LINK.o) -o $@ $^
++	$(LINK.o) -o $@ $^ $(LIBS)
+ 
+ $(KEXEC): CPPFLAGS+=-I$(srcdir)/kexec/arch/$(ARCH)/include
+ 

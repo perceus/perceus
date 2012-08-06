@@ -1,0 +1,509 @@
+\documentclass[10pt,letterpaper]{article}
+
+\usepackage{palatino,url}
+
+\usepackage[left=2cm,top=3cm,bottom=3cm,right=2cm,nohead,nofoot]{geometry}
+
+\title{Perceus and Caos NSA Quick-Start}
+
+\author{www.Infiscale.com}
+
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\addtolength{\parskip}{0.5\baselineskip}
+
+\section{Introduction}
+Historically Warewulf has been the de facto stateless cluster manager in
+HPC. Perceus (the next generation of Warewulf) has taken cluster management
+to the next level. It has already proved to be easier to use and administer,
+more scalable, more flexible, and more supportable.
+
+While Perceus can be (and is being) packaged on various distributions, it has
+been incorporated with Caos NSA by the Perceus and Caos developers in a manner
+that makes it even easier to implement and use!  This is the fastest way to
+implement an HPC cluster and is the basis of extreme clustering of many
+thousands of nodes.
+
+The intent of this document is to provide users a fast, pain-free installation
+and configuration of Caos NSA with Perceus to create a turnkey HPC cluster. For
+more detailed information on general Perceus concepts and commands, the Perceus
+User Guide should be read.
+
+\subsection{About this document}
+This document is designed to satisfy the general needs of the Perceus user.
+The full manual, programming, building, and integration guides are available
+from Infiscale.com as a licensed product. Licensing Perceus and/or these
+documents from Infiscale.com supports the development of Infiscale's open
+source projects.
+
+This guide will describe the quick start procedure for setting up Perceus
+on Caos NSA optionally using Intel's Rapid Boot.
+
+The installation described here is also the basis of the only freely
+available, Intel Cluster Ready certified solution.
+
+\subsection{Perceus}
+Perceus is the next generation cluster and enterprise tool kit for the
+deployment, provisioning, and management of groups of servers. Employing the
+power of the Perceus OS and framework, the user can quickly purpose a machine
+out of the box. Perceus truly makes the computer a commodity, allowing an
+organization to manage large quantities of machines in a scalable fashion.
+
+Created by the developers of Warewulf, one of the most widely-utilized Linux
+cluster tool-kits and the de facto standard open source stateless solution for
+many years now, Perceus redefines the limits of scalability, flexibility, and
+simplicity.  Perceus was architected from its inception to leverage the
+knowledge and experience gained from the original Warewulf project while at the
+same time addressing some of its perceived shortcomings.  This unique vantage
+point enables us to deliver what we feel is the definitive solution for all
+cluster and highly-scalable platforms regardless of their size or specific
+requirements.
+
+While other cluster toolkit solutions have traded ease of use for scalability,
+flexibility, and/or simplicity, Perceus leverages a revolutionary new design
+which makes it extremely well-suited to fit the needs of a wide array of
+environments, from highly-scalable and performance-centric clustering to new
+system provisioning. Without making any sacrifices, Perceus can be extremely
+simple to use and "turnkey," or it can be used as a development-enabling
+platform designed for very specialized roles.
+
+\noindent Additional information, news, resources and downloads can be found
+at:
+
+{\ttfamily
+\indent \url{http://www.perceus.org/}
+}
+
+\subsection{Caos NSA}
+Caos NSA is the second generation operating system developed by
+Infiscale.com. Created by the original developers of Perceus, Warewulf,
+Centos, Caos, and GravityOS it is designed for high performance, simplicity
+and scalability. Linux doing what it has always done best.
+
+With a large emphasis on performance, Caos NSA is dedicated to providing a
+proper solution for HPC. Focused on being light weight, streamlined, simple,
+fast and clean, it also comes with integration with the Open Fabrics Alliance
+InfiniBand stack, recent and security enabled kernels, Open MPI, integrated
+scheduler, Intel Cluster Ready, and of course Perceus and Warewulf makes
+Caos NSA an optimal base for all HPC needs.
+
+Caos NSA not only is bundled with Perceus pre-integrated but also has
+custom configuration tools (via "sidekick" the Caos configuration toolkit).
+While, Perceus is distribution neutral, Caos NSA makes a very smart choice
+for doing any type of clustering.
+
+\subsection{Intel Cluster Ready}
+The Intel Cluster Ready (ICR) certification is an industry standard
+ensuring that the hardware, operating system and software (libraries and
+applications) will all work well together. Caos NSA with Perceus is the only
+freely available community oriented platform which is ICR certified by Intel
+themselves.
+
+\subsection{Infiscale.com}
+Both Caos NSA and Perceus is developed and provided to the world under the
+GNU GPL by Infiscale.com. Infiscale.com has a multitude of product
+enhancements and service offerings based around Caos and Perceus, and we
+encourage you to help support continued development and enhancement of
+our efforts by supporting Infiscale.com!
+
+\subsection{Intel Rapid Boot}
+Intel and Infiscale has created a unique boot and provisioning system which
+allows for fast, scalable and large scale provisioning for clustering and
+enterprise computing. Using this solution, Perceus is actually embedded on
+the motherboard's BIOS chip alongside the Rapid Boot BIOS firmware. This
+removes the need to PXE boot the Perceus bootstrap software as it is already
+included on the motherboard.
+
+\section{Creating Caos NSA 1.0 installation media}
+At the time of this writing the installation version used was 0.9-34, but
+you should download the latest CDROM image from:
+
+{\ttfamily
+\indent \url{http://mirror.caoslinux.org/Caos-NSA-1.0/install}
+}
+
+\noindent {\bf Note: You will want to download either the Cluster or Full
+installation media depending on your needs. Other install builds will work
+but may require a bit more setup and installation of specific packages.}
+
+Burn this to a CDROM using the utility of your choice (the command to do
+this in NSA is {\bf cdrecord} and then put the installation media into the
+CDROM drive of the system you wish to install on.
+
+\section{Hardware Setup}
+There are lots of models for building clusters, but for the sake of
+simplicity we will assume a someone traditional model of a single master
+(head) node which has at least two network interfaces. One connected to the
+public network of which people will use to gain access to the cluster, and
+the second connected via a private network directly to the slave nodes.
+
+From this point on, we will assume that the public network resides on "eth0"
+and the cluster network can be anything else (including InfiniBand "ib0").
+
+If installing in VMWare, configure the primary Ethernet device to be either
+Bridged or NAT, and then add a second second Ethernet device to be on a custom
+virtual network (for example, VMnet2). Configure the CDROM to use the image
+file that you downloaded above. When creating the node VM's, they just need
+a single Ethernet device configured to also use VMnet2 and remove the following
+devices as they are not needed on nodes: sound, usb, cdrom and optionally hard
+disk.
+
+\section{Installing Caos NSA}
+The installation media that you created from the above step is boot-able
+so just insert that into the CDROM drive of the system you wish to install
+to, and boot the system. (If the CDROM does not boot, you may need to change
+the boot device priority in the BIOS)
+
+Once the system has booted on the installation media, you will be presented
+with the installation command line with a brief description of its usage
+presented. Install the system with the following command:
+
+\begin{verbatim}
+install hostname=headnode.cluster.yourdomain.com
+\end{verbatim}
+
+If no networking options are defined, the default action is to configure the
+first Ethernet device (eth0) with DHCP. If you wish to make this static, or
+even use a different device (instead of eth0), add the following options to
+the above command:
+
+\begin{verbatim}
+ipaddr=192.168.1.20 netmask=255.255.255.0 gw=192.168.1.1 ifdev=eth1
+\end{verbatim}
+
+This will install the system to the primary hard disk {\bf non-interactively}.
+Once it is finished, you will be prompted to reboot onto your installed
+system. At this point, type the {\tt [ENTER]} key.
+
+\section{System Configuration}
+During the first boot, you will be prompted to configure the system via
+Sidekick. Use your tab button to navigate to the different fields. This
+will guide you through the various required configuration steps.
+
+Navigation through sidekick is done with the arrow keys and {\tt [TAB]}
+button. Take a moment to make sure that the right section is highlighted
+before pressing the {\tt [ENTER]} key because the {\tt [ENTER]} key will
+immediately take all current values and jump to the next page.
+
+Please note that some of the steps maybe slightly different depending on the
+specific version of the installer that you are using and the hardware
+configuration. Sidekick is designed to be intuitive, so any unexpected steps
+should be self explanatory.
+
+\begin{description}
+
+\item[System Information:] Set whatever system information you want
+to enter. Confirm the Hostname, and set any of the other fields using the
+arrow key to navigate between fields. Press the {\tt [TAB]} button to
+select {\tt <OK>} and press {\tt [ENTER]}.
+
+\item[Set Password:] This is the system's "root" user (administrator
+password). Type in the system password and press {\tt [ENTER]}. It will
+ask you to repeat the password again to confirm and then press
+{\tt [ENTER]}.
+
+\item[Timezone:] Set the system's default timezone here by navigating to
+the appropriate country or continent and press {\tt [ENTER]}. Then
+navigate to the nearest location or timezone to you and press {\tt [ENTER]}
+again to set the system's timezone.
+
+\item[Network Device Configuration:] Use this menu to make any changes
+to the network configuration for any of the installed devices. If you have
+any InfiniBand devices, they will also show up here for configuration of
+IPoIB. You will notice that one device is already configured. This device
+was configured automatically by the installer.
+
+You will need to configure at least one additional network which is connected
+directly and privately to the nodes in the cluster. Use the arrow keys to
+select the device you want to configure and press {\tt [ENTER]}.
+
+For most examples, you will be using a Ethernet device (e.g. "eth1"), but if
+you are provisioning nodes running Embedded Perceus over InfiniBand then you
+will want to select the InfiniBand device connected to the nodes (e.g. "ib0").
+
+\item[Boot Protocol Configuration:] Select static to configure the
+device's IP and netmask and press {\tt [ENTER]}.
+
+\item[Static IP Network Configuration:] Input '10.99.99.1' for the IP
+address and then use the down arrow to set '255.255.255.0' for the netmask
+(do not enter a Gateway). Once configured press {\tt [ENTER]}.
+
+{\tt Note: You may use the above addressing unless it conflicts with one of
+the other networks directly attached to this system.}
+
+\item[Network Device Configuration:] You are now back at the main network
+device selector. Navigate to the {\tt <Done>} button using the {\tt [TAB]}
+key and then press {\tt [ENTER]}.
+
+\item[Firewall Configuration:] If you want to enable the firewall select any
+devices that are connected to a public network by using the {\tt [SPACE]} key
+then press {\tt [ENTER]}. If you choose to enable the firewall, this will take
+you through several firewall related pages where the defaults can be used.
+
+\item[YUM Proxy configuration:] Configure a web proxy to use when installing
+or updating packages. If you don't require one, then leave it blank. press
+{\tt [ENTER]} when done.
+
+\item[System Profile:] Here you will need to select the "Clustering" and
+"ICR" profile to have Sidekick automatically configure your system for
+Clustering and Intel Cluster Ready support (You can select or deselect other
+profiles as well). When done, press {\tt [ENTER]}.
+
+\item[Enable Perceus Confirmation:] Enable Perceus on your system by selecting
+{\tt <Yes>} and press {\tt [ENTER]}.
+
+\item[Perceus Network Device:] Here you should select the device that
+is connected to the nodes which we configured earlier. Only devices that have
+static IP addresses will show up in this list.
+
+\item[Perceus Configuration:] This screen will allow you to configure
+various Perceus options. If all earlier configuration options were successful
+then the defaults pre-chosen will work. Make any desired configuration
+changes and press {\tt [ENTER]}.
+
+After you pressed {\tt [ENTER]}, Perceus will be automatically configured for
+you and will prompt for registration information. The registration should be
+entered by you (the end user) and the Perceus developers ask that it be filled
+out accurately as it is used for statistical gathering and internal metrics.
+
+\item[OFED InfiniBand Subnet Manager:] If you have an InfiniBand device
+installed, then you will be prompted to enable the subnet manager. At least
+one subnet manager is required for any InfiniBand communication. If you wish
+to enable the subnet manager on this system select {\tt <Yes>} and press
+{\tt [ENTER]}.
+
+\item[NAT:] Network Address Translation (NAT) enables other systems to
+use this system as their "gateway" to other networks (e.g. the Internet).
+Enable this option by selecting {\tt <Yes>} and press {\tt [ENTER]}.
+
+\item[Select network interface for NAT:] Select the network interface
+that is connected to the public network and press {\tt [ENTER]}.
+
+\item[Enable Slurm Confirmation:] Slurm is the resource manager and batch
+scheduler that is bundled with Caos NSA. It allows one to submit batch jobs
+(shell scripts) to the scheduler and the scheduler will run them in order
+(FIFO) on the first available nodes. Select {\tt <Yes>} and press
+{\tt [ENTER]}.
+
+\item[System Update:] This will do an automatic check for system
+updates. If you wish to do this select {\tt <Yes>} and press {\tt [ENTER]}.
+
+\item[Register Your Installation:] The Caos NSA developers request
+that they are notified of successful system installations. You are not
+required to do this, and it is only used for them to keep track of
+installation numbers. If you don't mind doing this select {\tt <Yes>} and
+press {\tt [ENTER]}.
+
+\item[All Done!] System configuration is complete.... Press
+{\tt [ENTER]} to continue to the login prompt.
+
+\end{description}
+
+At this point the system will continue booting and end up at the login
+screen. Go ahead and log in as "root" with the password you configured
+earlier.
+
+\section{Perceus Configuration}
+
+\subsection{Booting Nodes}
+Perceus is already running and is ready to start to booting nodes. Go ahead
+and boot a test node at this point. If the node and network is configured
+properly, it will PXE boot or boot via the embedded Perceus image and will
+stop at:
+
+\begin{verbatim}
+ERROR: No configured VNFS image for n0000!
+\end{verbatim}
+
+At this point we have not imported any Virtual Node File System's into
+Perceus, thus this error message is expected and demonstrates that Perceus
+has gained control of the node and we can provision once configured.
+
+\subsection{Perceus Modules}
+Perceus modules allow one to inject additional functionality into the
+various stages of the provisioning process. The "masterauth" module will
+synchronize the user accounts from the master node to all slaves booting
+and/or in the ready state.
+
+\begin{verbatim}
+# perceus module activate masterauth
+Perceus module 'masterauth' has been set active in 'init/all'
+Perceus module 'masterauth' has been set active in 'ready/all'
+# perceus module states
+init/all:
+   masterauth
+ready/all:
+   masterauth
+\end{verbatim}
+
+Activating the perceus module without a specific state argument will cause it
+to be activated in its default state(s).
+
+If you are running Perceus embedded on the node motherboard, then you will
+need to obtain the initbins-x86 Perceus module from Infiscale.com, download,
+import and activate it with Perceus.
+
+\begin{verbatim}
+# perceus module import /root/initbins-x86-1.4.pmod
+initbins-x86-1.4 has been imported
+# perceus module activate initbins-x86-1.4
+Perceus module 'initbins-x86-1.4' has been set active in 'init/all'
+# perceus module states
+init/all:
+   initbins-x86-1.4
+   masterauth
+ready/all:
+   masterauth
+\end{verbatim}
+
+
+\subsection{VNFS Capsules}
+Perceus handles the provisioning of nodes via the Virtual Node File
+System (VNFS) and Perceus has a mechanism of encapsulating them into a
+single file commonly referred to as the "VNFS capsule". You will need to
+import the VNFS capsule that you want to run on the nodes.
+
+The Caos NSA development team has not only installers for Caos NSA available
+but also pre-made VNFS capsules on their download sites and mirrors. You
+can download one from {\tt http://mirror.caoslinux.org/Caos-NSA-1.0/vnfs/}.
+At the time of this writing, there are two primary builds available:
+caos-nsa-node and caos-nsa-node-icr. The 'icr' version is the Intel Cluster
+Ready build. It is bigger as it contains a much larger compatibility base.
+Once downloaded, you can perform the following command:
+
+\begin{verbatim}
+# perceus vnfs import caos-nsa-node-icr-0.9-34-1.stateless.x86_64.vnfs
+\end{verbatim}
+
+This command will take a moment to operate and will prompt you for some
+basic information. Answer the questions appropriately for your needs (most
+defaults should be used).
+
+\subsection{Node configuration}
+At this point, we have booted at least one node(s), and we have a VNFS
+imported into Perceus but the node has not been set to any VNFS so it is
+still showing the ERROR on the console.
+
+Perceus uses attributes for each node which can be set with the Perceus node
+"set" command. Use the set command to assign the above-mentioned VNFS capsule
+to the booted node:
+
+\begin{verbatim}
+# perceus node set vnfs caos-nsa-node-icr-0.9-34-1.stateless.x86_64 n0000
+\end{verbatim}
+
+Once that command has been run and confirmed, the node will be automatically
+provisioned (no services to restart, or reboot necessary). Additional nodes
+booted and added to the Perceus database will also need to be set to use a
+particular VNFS capsule. You can configure default actions in the
+{\tt defaults.conf} file described below in the configuration file section.
+
+The "perceus node" and "perceus group" commands can take multiple arguments and
+the arguments can be glob's, node ranges, etc.. The following example will set
+the node group to "newgroup" on the listed nodes.
+
+\begin{verbatim}
+# perceus node set group newgroup n0000 n00[01-20] n01*
+\end{verbatim}
+
+\subsection{Node Information}
+To view node information, you can use the following commands:
+
+\begin{verbatim}
+# perceus node summary
+# perceus node stats
+# perceus node show
+\end{verbatim}
+
+All of the above commands can take node arguments in the form of a list, glob,
+or ranges as the above "set" command does.
+
+\subsection{Using Node Groups}
+Groups offer a way of combining multiple nodes and operating on them in unison.
+For example, using the above example where we set some nodes to a group called
+"newgroup", we can demonstrate the following:
+
+\begin{verbatim}
+# perceus group set enabled 0 newgroup
+# perceus group set vnfs rhel-5.1-1.stateless.x86_64 newgroup
+# perceus group set group rhel5 newgroup
+\end{verbatim}
+
+\subsection{Modifying the VNFS}
+You may need to make changes to the default VNFS capsule. To do this, you
+should mount the VNFS image (using a Perceus mount), make changes and then
+unmount the image. Once the VNFS is mounted, you can operate on it like a
+standard directory or chroot file system.
+
+\begin{verbatim}
+# perceus vnfs mount caos-nsa-node-icr-0.9-34-1.stateless.x86_64
+Mounting VNFS 'caos-nsa-node-icr-0.9-34-1.stateless.x86_64'...
+The VNFS can be found at: /mnt/caos-nsa-node-icr-0.9-34-1.stateless.x86_64
+# yum --installroot /mnt/caos-nsa-node-icr-0.9-34-1.stateless.x86_64 install ntp
+   ...
+# chroot /mnt/caos-nsa-node-icr-0.9-34-1.stateless.x86_64 /sbin/chkconfig ntp on
+# perceus vnfs umount caos-nsa-node-icr-0.9-34-1.stateless.x86_64
+Un-mounting VNFS 'caos-nsa-node-icr-0.9-34-1.stateless.x86_64'...
+This will take some time as the image is updated and compressed...
+\end{verbatim}
+
+
+\subsection{Configuration Structure}
+The default location for configuration files is {\tt /etc/perceus} which is
+where you will find the following files.
+
+\begin{description}
+\item[perceus.conf:] This configuration specifies some of the primary Perceus
+configuration options. Any changes to this file will require a restart of the
+Perceus init script ({\tt /sbin/service perceus restart}. Here you can
+reconfigure Perceus to use HTTPD instead of NFS to do the provisioning as well
+as set the NFS or HTTPD server to another box (e.g. a scalable and redundant
+server).
+
+\item[defaults.conf:] Configurations here set how new nodes that are added to
+the Perceus database are handled. Everything from default node name format,
+group and VNFS can be automatically set when a new node is configured.
+
+\item[modules:] Any modules that are loaded should (but is not forced) to use
+this location for configuration files.
+
+\end{description}
+
+\subsection{Integration with Warewulf 2.9}
+As Perceus replaces the provisioning functionality of Warewulf <= 2,
+Warewulf 3 targets a different niche in HPC cluster computing. At the
+moment, the freely available Warewulf 3 development comes with NSA and has
+been integrated with Perceus as it stands now. You can see this by typing
+the command {\tt wwtop} to see the status of the running nodes.
+
+\subsection{A Working Perceus Cluster}
+Congratulations, you now have a working Perceus cluster! This cluster can be
+used as the starting point for a High Performance Computing solution, web
+server farm, large infrastructure deployment and management utilities, disk IO,
+CPU farm, computer workstation lab, virtualization host framework or anything
+else you can think of!
+
+Caos NSA and Perceus lays the perfect architecture for turn key systems or
+provides the base environment for minimal or extreme customization and
+appliances.
+
+\section{Commercial Features and Services}
+
+Perceus is licensed free of charge via the GNU GPL.  This means that all costs
+incurred by its development, testing, and distribution have been borne by
+Infiscale.com.  We encourage both corporate partners and licensees to contact
+us as it helps us to maintain our freely available product.
+
+If you wish to distribute Perceus on a commercial basis (including utilizing
+it with commercial software or with a hardware purchase) you should pursue a
+commercial relationship with Infiscale.com.
+
+Don't forget to check with Infiscale to see how they can help you as a user too!
+Supporting Infiscale, supports freely available open source software like this.
+
+\indent \end{document}
+

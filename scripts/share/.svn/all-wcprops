@@ -1,0 +1,125 @@
+K 25
+svn:wc:ra_dav:version-url
+V 44
+/svn/perceus/!svn/ver/2401/1.6/scripts/share
+END
+import-isc-dhcpd.pl
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/perceus/!svn/ver/2148/1.6/scripts/share/import-isc-dhcpd.pl
+END
+scientific-linux-4.5-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/perceus/!svn/ver/2236/1.6/scripts/share/scientific-linux-4.5-genchroot.sh
+END
+chroot2stateless.sh
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/perceus/!svn/ver/2401/1.6/scripts/share/chroot2stateless.sh
+END
+caos-2.0-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/perceus/!svn/ver/2236/1.6/scripts/share/caos-2.0-genchroot.sh
+END
+rhel-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/perceus/!svn/ver/2311/1.6/scripts/share/rhel-genchroot.sh
+END
+centos-5.0-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/perceus/!svn/ver/2236/1.6/scripts/share/centos-5.0-genchroot.sh
+END
+centos-5.1-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/perceus/!svn/ver/2236/1.6/scripts/share/centos-5.1-genchroot.sh
+END
+centos-4-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/perceus/!svn/ver/2236/1.6/scripts/share/centos-4-genchroot.sh
+END
+rhel-6-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/perceus/!svn/ver/2398/1.6/scripts/share/rhel-6-genchroot.sh
+END
+centos-5-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/perceus/!svn/ver/2236/1.6/scripts/share/centos-5-genchroot.sh
+END
+centos-4.4-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/perceus/!svn/ver/2236/1.6/scripts/share/centos-4.4-genchroot.sh
+END
+centos-4.5-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/perceus/!svn/ver/2236/1.6/scripts/share/centos-4.5-genchroot.sh
+END
+centos-4.6-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 68
+/svn/perceus/!svn/ver/2236/1.6/scripts/share/centos-4.6-genchroot.sh
+END
+caos-nsa-1.0-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/svn/perceus/!svn/ver/2148/1.6/scripts/share/caos-nsa-1.0-genchroot.sh
+END
+chroot2stateful.sh
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/perceus/!svn/ver/2401/1.6/scripts/share/chroot2stateful.sh
+END
+insert-ethers.pl
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/perceus/!svn/ver/2148/1.6/scripts/share/insert-ethers.pl
+END
+mkelf.sh
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/perceus/!svn/ver/2148/1.6/scripts/share/mkelf.sh
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/perceus/!svn/ver/2393/1.6/scripts/share/Makefile.am
+END
+scientific-linux-5.0-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/perceus/!svn/ver/2236/1.6/scripts/share/scientific-linux-5.0-genchroot.sh
+END
+scientific-linux-5.1-genchroot.sh
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/perceus/!svn/ver/2236/1.6/scripts/share/scientific-linux-5.1-genchroot.sh
+END

@@ -1,0 +1,11 @@
+Package: perceus
+Version: 1.6-2
+Architecture: amd64
+Maintainer: Infiscale <support@infiscale.com>
+Installed-Size: 12344
+Depends: libc6 (>= 2.7)
+Section: System Tools
+Priority: extra
+Homepage: <infiscale.com>
+Description: <Perceus 1.6.2>
+ <The defacto stateless provisioning solution for Cloud and HPC from Infiscale. Perceus replaces Warewulf for provisioning.>

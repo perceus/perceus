@@ -1,0 +1,222 @@
+#!/bin/sh
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+
+MAX_TRIES=5
+
+mkdir /proc 2>/dev/null
+mkdir /sys  2>/dev/null
+mkdir /tmp  2>/dev/null
+mkdir /var  2>/dev/null
+mkdir /usr  2>/dev/null
+
+mount -t proc none /proc
+mount -t sysfs none /sys
+
+. /etc/functions
+. /etc/initramfs.conf
+
+clear
+
+GRAY="\\033[1;30m"
+RED="\\033[1;31m"
+GREEN="\\033[1;32m"
+YELLOW="\\033[1;33m"
+BLUE="\\033[1;34m"
+PINK="\\033[1;35m"
+CYAN="\\033[1;36m"
+WHITE="\\033[1;37m"
+NORMAL="\\033[0;39m"
+
+
+# If you want to change the below lines and redistribute, please talk to
+# Infiscale and become a partner first at info@perceus.org.
+echo -e "    ${RED}____${NORMAL}    ${BLUE}Provision Enterprise Resources and Clusters Enabling Uniform Systems${NORMAL}"
+echo -e "   ${RED}/ __ \___  _____________  __  _______${NORMAL}"
+echo -e "  ${RED}/ /_/ / _ \/ ___/ ___/ _ \/ / / / ___/${NORMAL}  PERCEUS HPC - VERSION $VERSION-$BUILD"
+echo -e " ${RED}/ ____/  __/ /  / /__/  __/ /_/ (__  )${NORMAL}   (C) 2005-2009 INFISCALE.COM"
+echo -e "${RED}/_/    \___/_/   \___/\___/\__,_/____/${NORMAL}    info@perceus.org"
+echo -e ""
+echo -e "Perceus is given free of charge to the open source community.  Commercial"
+echo -e "distribution and support should only be done by Infiscale and its partners so"
+echo -e "we can keep Perceus free for everyone.  Contact us for details!"
+
+echo '--------------------------------------------------------------------------------'
+echo
+
+if [ "x$ENABLE_DEBUG" = "x" ]; then
+   ENABLE_DEBUG=0
+fi
+
+dprint 1 "Init Debug level: $ENABLE_DEBUG\n"
+
+if [ -x "/sbin/syslogd" ]; then
+   dprint 1 "Starting syslogd\n"
+   mkdir -p /var/log/
+   /sbin/syslogd -O /var/log/messages
+fi
+if [ -x "/sbin/klogd" ]; then
+   dprint 1 "Starting klogd\n"
+   /sbin/klogd -c 1
+fi
+if [ -x "/sbin/mdev" ]; then
+   dprint 1 "Starting mdev\n"
+   echo /sbin/mdev > /proc/sys/kernel/hotplug
+   /sbin/mdev -s
+fi
+
+dprint 1 "MasterIP kernel paramater set to: $MASTERIP_CMDLINE\n"
+dprint 1 "NOLOAD kernel paramter set to: $NOLOAD\n"
+dprint 1 "MTU kernel paramter set to: $MTU\n"
+
+if [ $ENABLE_DEBUG -ge 2 ]; then
+   set -x
+fi
+
+hw_load
+
+dprint 1 "Probing for ethernet devices:"
+for dev in $CUSTOM_DEVS $DEVS; do
+   if ifconfig $dev up >/dev/null 2>&1; then
+      echo $dev >> /found_nics
+      dprint 1 " $dev\n"
+      if [ -n "$MTU" ]; then
+         dprint 1 "  - Setting MTU to '$MTU'\n"
+         ifconfig $dev mtu $MTU
+      fi
+   fi
+done
+
+dprint 1 "\n"
+
+
+nodeid() {
+   DEV=$1
+   test -z "$DEV" && return 1
+   TYPE=`echo $DEV | sed -e 's/[0-9]//g'`
+   if [ "x$TYPE" = "xeth" ]; then
+      ethinfo -aq $DEV
+      return $?
+   elif [ "x$TYPE" = "xib" ]; then
+      ethinfo -aq eth0
+      return $?
+   fi
+   return 0
+}
+
+ifcheck() {
+   DEV=$1
+   test -z "$DEV" && return 1
+
+   if [ -n "$DHCP_ETH" ]; then
+      if [ $DEV != $DHCP_ETH ]; then
+         dprint 1 "Skipping device '$DEV' (requested dhcp_eth=$DHCP_ETH)\n"
+         return 1
+      fi
+   fi
+   if [ -n "$DHCP_MAC" ]; then
+      MAC=`nodeid $dev`
+      if [ $MAC != $DHCP_MAC ]; then
+         dprint 1 "Skipping device '$DEV' (requested dhcp_mac=$DHCP_MAC)\n"
+         return 1
+      fi
+   fi
+
+   TYPE=`echo $DEV | sed -e 's/[0-9]//g'`
+   if [ "x$TYPE" = "xeth" ]; then
+      dprint 1 "Testing $DEV for link\n"
+      if ethinfo -l $DEV >/dev/null 2>&1; then
+         dprint 0 "Etherlink found on $DEV\n"
+      else
+         dprint 1 "No Etherlink found, skipping $DEV\n"
+         return 1
+      fi
+   elif [ "x$TYPE" = "xib" ]; then
+      if [ -n "$ENABLE_IB" ]; then
+         dprint 0 "InfiniBand device found at $DEV\n"
+      else
+         dprint 1 "Skipping InfiniBand device $DEV (IB support not requested)\n";
+         return 1
+      fi
+   fi
+   return 0
+}
+
+ifup() {
+   DEV=$1
+   test -z "$DEV" && return 1
+   dprint 0 "Requesting DHCP configuration via $DEV\n"
+   udhcpc --now -i $dev -t 5 -s /sbin/dhcp-script >/dev/null 2>&1
+   return $?
+}
+
+provisiond_wrap() {
+
+   while true; do
+      provisiond "$@"
+      RETVAL=$?
+      if [ $RETVAL -eq "255" ]; then
+         dprint 0 "Failed to contact remote Perceus master\n"
+         return 255
+      else
+         sleep 1
+      fi
+   done
+
+}
+
+count=1
+if [ -f "/found_nics" ]; then
+   while true; do
+      for dev in `cat /found_nics`; do
+         if ifcheck $dev; then
+            if ifup $dev; then
+               local ARGS
+
+               if [ -f "/etc/ifstate" ]; then
+                  . /etc/ifstate
+               fi
+
+               if [ "x$MASTERIP_CMDLINE" == "xcloud" ]; then
+                  MASTERIP="69.72.137.138"
+                  dprint 0 "Provisioning from 'the cloud'\n"
+                  ENABLE_NODEID=1
+               elif [ -n "$MASTERIP_CMDLINE" ]; then
+                  MASTERIP="$MASTERIP_CMDLINE"
+                  dprint 0 "Provisioning from $MASTERIP\n"
+               elif [ -n "$DHCP_MASTER" ]; then
+                  MASTERIP="$DHCP_MASTER"
+                  dprint 0 "Provisioning from $MASTERIP\n"
+               fi
+               export MASTERIP
+
+               if [ -n "$ENABLE_NODEID" ]; then
+                  local TMP
+                  TMP=`nodeid $dev`
+                  if [ -n "$TMP" ]; then
+                     NODEID="nodeid=$TMP"
+                  else
+                     dprint 0 "ERROR: Could not obtain nodeid ($dev)\n"
+                  fi
+               fi
+
+               if provisiond_wrap $PROVISIOND_ARGS $MASTERIP init $NODEID $PERCEUSD_ARGS; then
+                  exit 0
+               fi
+            fi
+         fi
+      done
+      dprint 0 "ERROR: Could not connect to the Perceus master ($count/$MAX_TRIES)\n";
+      if [ $count -ge $MAX_TRIES ]; then
+         reboot30
+      fi
+      count=`expr $count + 1`
+      sleep 2
+   done
+
+else
+   dprint 0 "ERROR: No supported network interface cards found!\n"
+   reboot30
+fi

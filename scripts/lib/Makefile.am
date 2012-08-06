@@ -1,0 +1,3 @@
+SUBDIRS = Perceus
+
+MAINTAINERCLEANFILES = Makefile.in

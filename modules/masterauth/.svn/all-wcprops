@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/perceus/!svn/ver/2148/1.6/modules/masterauth
+END
+50-masterauth.pl
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/perceus/!svn/ver/2148/1.6/modules/masterauth/50-masterauth.pl
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/perceus/!svn/ver/2148/1.6/modules/masterauth/Makefile.am
+END
+defaultroles
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/perceus/!svn/ver/2148/1.6/modules/masterauth/defaultroles
+END

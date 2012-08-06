@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+
+
+for dev in `cat /found_nics`; do
+   ifconfig $dev down >/dev/null 2>&1
+done
+
+if [ ! -f "/sbin/detect" ]; then
+   exit
+fi
+
+. /etc/functions
+. /etc/initramfs.conf
+
+dprint 1 "Un-loading device drivers...\n"
+
+cat /proc/modules | awk '{print $1}' | while read module; do
+   unload_module $module
+done
+

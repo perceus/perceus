@@ -1,0 +1,647 @@
+AC_PREREQ(2.59)
+AC_INIT([perceus], [1.6.0], [gmk@infiscale.com])
+AC_CONFIG_SRCDIR([src])
+
+AC_PROG_INSTALL
+AM_INIT_AUTOMAKE
+AC_PROG_LIBTOOL
+AC_PROG_CC
+AC_CONFIG_MACRO_DIR([.])
+
+AM_ENABLE_STATIC
+
+AM_CONFIG_HEADER([src/config.h])
+
+AC_CHECK_HEADER(libelf.h, , [
+   AC_MSG_ERROR([Fatal:  libelf.h not found.])
+])
+
+AC_CHECK_HEADER(openssl/rsa.h, , [
+   AC_MSG_ERROR([Fatal:  openssl/rsa.h not found.])
+])
+
+AC_CHECK_HEADER(openssl/sha.h, , [
+   AC_MSG_ERROR([Fatal:  openssl/sha.h not found.])
+])
+
+AC_CHECK_HEADER(openssl/bn.h, , [
+   AC_MSG_ERROR([Fatal:  openssl/bn.h not found.])
+])
+
+AC_CHECK_HEADER(openssl/pem.h, , [
+   AC_MSG_ERROR([Fatal:  openssl/pem.h not found.])
+])
+
+AC_CHECK_HEADER(openssl/err.h, , [
+   AC_MSG_ERROR([Fatal:  openssl/err.h not found.])
+])
+
+AC_CHECK_HEADER(openssl/rand.h, , [
+   AC_MSG_ERROR([Fatal:  openssl/rand.h not found.])
+])
+
+
+AC_MSG_CHECKING(how to link libz)
+LINK_LIBZ=`gcc -print-file-name=libz.a`
+if ! test -e $LINK_LIBZ ; then
+   echo "ERROR: Could not identify static library archive location for libz!"
+   exit 1
+fi
+AC_MSG_RESULT($LINK_LIBZ)
+AC_SUBST(LINK_LIBZ)
+
+
+# Ethtool kernel header inclusion check
+AC_MSG_CHECKING(kernel headers for proper namespace functionality)
+cat <<EOF > ethtest.c
+#define __KERNEL__
+#include <linux/types.h>
+#include <linux/ethtool.h>
+#undef __KERNEL__
+int main(void){
+   return(0);
+}
+EOF
+OUT=`$CC -o ethtest ethtest.c 2>&1`
+RETVAL=$?
+if test $RETVAL != "0"; then
+  AC_MSG_RESULT(error)
+   echo "$OUT"
+   echo
+   echo "You can test compile with 'gcc -o ethtest ethtest.c' in this directory"
+   echo
+   exit 1
+else
+   rm -f ethtest ethtest.c
+   AC_MSG_RESULT(ok)
+fi
+
+AC_MSG_CHECKING(for initramfs arch)
+case `uname -m` in
+    x86_64)  libdirname="lib64" ; initfs_arch="x86_64" ; ld_name="ld-linux-x86-64" ;;
+    i*86)    libdirname="lib" ;   initfs_arch="i386" ;   ld_name="ld-linux" ;;
+    athlon)  libdirname="lib" ;   initfs_arch="i386" ;   ld_name="ld-linux" ;;
+    *)       libdirname="lib" ;   initfs_arch="i386" ;   ld_name="ld-linux" ;;
+esac
+AC_MSG_RESULT($initfs_arch)
+AC_SUBST(initfs_arch)
+AC_SUBST(libdirname)
+
+AC_MSG_CHECKING(for kernel config option)
+AC_ARG_WITH(kconfig, [  --with-kconfig=config   Utilize a different kernel configuration (.config)], [
+   if test -n "$withval" -a "x$withval" != "xno" ; then
+      kconfig=$withval
+   fi
+])
+if test "x$kconfig" = "x"; then
+   kconfig="configs/kernel-$initfs_arch.config"
+   AC_MSG_RESULT("kernel-$initfs_arch.config")
+else
+   AC_MSG_RESULT($kconfig)
+   if ! test -f "$kconfig"; then
+      echo
+      echo "ERROR: Kernel configuration file '$kconfig' doesn't exist"
+      echo
+      exit 1
+   fi
+   kconfig=`echo $kconfig| sed -e 's/^\([[^\/]]\)/\$\(top_srcdir\)\/\1/'`
+fi
+AC_SUBST(kconfig)
+
+busybox_config="busybox-default.config"
+build_initramfs_tools="build-initramfs-tools"
+AC_ARG_ENABLE(uclibc, [  --enable-uclibc         Just do tests useful for uclibc builds], [
+   if test "x$withval" = "xyes" ; then
+      uclibc_build=yes
+      build_initramfs_extras=""
+      busybox_config="busybox-uclibc.config"
+      busybox_conditional_patches=""
+      echo "Skipping un-needed tests for uclibc builds"
+   fi
+])
+AC_SUBST(uclibc_build)
+AC_SUBST(uclibc_deps)
+AC_SUBST(busybox_config)
+AC_SUBST(busybox_conditional_patches)
+AC_SUBST(build_initramfs_tools)
+
+AC_ARG_ENABLE(gpxe, [  --enable-gpxe           Enable GPXE support (EXPERIMENTAL)], [
+   enable_gpxe=yes
+   echo "enabling GPXE support..."
+])
+AC_SUBST(enable_gpxe)
+
+if test "x$uclibc_build" != "xyes"; then
+
+   AC_MSG_CHECKING(for libc.so.6)
+   LIBC=`gcc -print-file-name=libc.so.6`
+   if test -e "$LIBC"; then
+      AC_MSG_RESULT($LIBC)
+   else
+      AC_MSG_RESULT("no")
+      echo "ERROR: Shared library for libc was not found!"
+      exit 1
+   fi
+   AC_SUBST(LIBC)
+
+   BUSYBOX_LIBS="$BUSYBOX_LIBS $LIBC"
+
+   AC_MSG_CHECKING(for $ld_name.so.2)
+   LIB_LD=`gcc -print-file-name=$ld_name.so.2`
+   if test -e "$LIB_LD"; then
+      AC_MSG_RESULT($LIB_LD)
+   else
+      AC_MSG_RESULT("no")
+      echo "ERROR: Shared library for dynamic linking ($ld_name.so.2) was not found!"
+      exit 1
+   fi
+   AC_SUBST(LIB_LD)
+   BUSYBOX_LIBS="$BUSYBOX_LIBS $LIB_LD"
+
+   AC_MSG_CHECKING(for libnss_dns.so.*)
+   LIBDNS=`gcc -print-file-name=libnss_dns.so.3`
+   if ! test -e "$LIBDNS"; then
+      LIBDNS=`gcc -print-file-name=libnss_dns.so.2`
+   fi
+   if ! test -e "$LIBDNS"; then
+      LIBDNS=`gcc -print-file-name=libnss_dns.so.1`
+   fi
+   if test -e "$LIBDNS"; then
+      AC_MSG_RESULT($LIBDNS)
+   else
+      AC_MSG_RESULT("no")
+      echo "ERROR: Shared library for dns was not found!"
+      exit 1
+   fi
+   AC_SUBST(LIBDNS)
+   BUSYBOX_LIBS="$BUSYBOX_LIBS $LIBDNS"
+
+   AC_MSG_CHECKING(for libresolv.so.*)
+   LIBRESOLV=`gcc -print-file-name=libresolv.so.2`
+   if ! test -e "$LIBDNS"; then
+      LIBRESOLV=`gcc -print-file-name=libresolv.so.1`
+   fi
+   if test -e "$LIBRESOLV"; then
+      AC_MSG_RESULT($LIBRESOLV)
+   else
+      AC_MSG_RESULT("no")
+      echo "ERROR: Shared library for name resolution was not found!"
+      exit 1
+   fi
+   AC_SUBST(LIBRESOLV)
+   BUSYBOX_LIBS="$BUSYBOX_LIBS $LIBRESOLV"
+
+   AC_MSG_CHECKING(for libpthread.so.*)
+   LIBPTHREAD=`gcc -print-file-name=libpthread.so.0`
+   if test -e "$LIBPTHREAD"; then
+      AC_MSG_RESULT($LIBPTHREAD)
+   else
+      AC_MSG_RESULT("no")
+      echo "ERROR: Shared library for POSIX threads was not found!"
+      exit 1
+   fi
+   AC_SUBST(LIBPTHREAD)
+   BUSYBOX_LIBS="$BUSYBOX_LIBS $LIBPTHREAD"
+
+   AC_MSG_CHECKING(for libuuid.so.*)
+   LIBUUID=`gcc -print-file-name=libuuid.so.1`
+   if test -e "$LIBUUID"; then
+      AC_MSG_RESULT($LIBUUID)
+   else
+      AC_MSG_RESULT("no")
+      echo "ERROR: Shared library for UUID generation was not found!"
+      exit 1
+   fi
+   AC_SUBST(LIBUUID)
+   BUSYBOX_LIBS="$BUSYBOX_LIBS $LIBUUID"
+
+   AC_MSG_CHECKING(for librt.so.*)
+   LIBRT=`gcc -print-file-name=librt.so.1`
+   if test -e "$LIBRT"; then
+      AC_MSG_RESULT($LIBRT)
+   else
+      AC_MSG_RESULT("no")
+      echo "ERROR: Shared library for realtime extension was not found!"
+      exit 1
+   fi
+   AC_SUBST(LIBRT)
+   BUSYBOX_LIBS="$BUSYBOX_LIBS $LIBRT"
+
+   # Distribution check
+   AC_MSG_CHECKING(for Distribution of Linux)
+   if test -f "/etc/caos-release"; then
+      perceus_service_start="/sbin/service {service} start"
+      perceus_service_stop="/sbin/service {service} stop"
+      perceus_service_on="/sbin/chkconfig {service} on"
+      perceus_service_off="/sbin/chkconfig {service} off"
+      perceus_inetd_restart="/sbin/service xinetd restart && /sbin/chkconfig xinetd on"
+      if grep -qi "^Caos NSA " /etc/caos-release; then
+         perceus_init_format="nsa"
+         perceus_operating_system="Caos NSA Linux"
+      else
+         perceus_init_format="redhat"
+         perceus_operating_system="Caos Linux"
+      fi
+      perceus_distribution_release_file="/etc/caos-release"
+      AC_MSG_RESULT($perceus_operating_system)
+
+   elif test -f "/etc/gentoo-release"; then
+      perceus_service_start="/etc/init.d/{service} start"
+      perceus_service_stop="/etc/init.d/{service} stop"
+      perceus_service_on="/sbin/rc-update add {service} default"
+      perceus_service_off="/sbin/rc-update del {service} default"
+      perceus_inetd_restart="killall -HUP xinetd inetd 2>/dev/null"
+      perceus_operating_system="Gentoo"
+      perceus_distribution_release_file="/etc/gentoo-release"
+      perceus_init_format="gentoo"
+      AC_MSG_RESULT(Gentoo)
+
+   elif test -f "/etc/debian_version" && test -f "/etc/lsb-release" && grep -qi "^DISTRIB_ID=Ubuntu" /etc/lsb-release ; then
+      perceus_service_start="/etc/init.d/{service} start"
+      perceus_service_stop="/etc/init.d/{service} stop"
+      perceus_service_on="/sbin/update-rc.d {service} default"
+      perceus_service_off="/sbin/update-rc.d {service} default"
+      perceus_inetd_restart="killall -HUP xinetd inetd 2>/dev/null"
+      perceus_operating_system="Ubuntu"
+      perceus_distribution_release_file="/etc/lsb-release"
+      perceus_init_format="debian"
+      AC_MSG_RESULT(Ubuntu)
+   
+   elif test -f "/etc/debian_version"; then
+      perceus_service_start="/etc/init.d/{service} start"
+      perceus_service_stop="/etc/init.d/{service} stop"
+      perceus_service_on="/sbin/rc-update add {service} default"
+      perceus_service_off="/sbin/rc-update del {service} default"
+      perceus_inetd_restart="killall -HUP xinetd inetd 2>/dev/null"
+      perceus_operating_system="Debian"
+      perceus_distribution_release_file="/etc/debian_version"
+      perceus_init_format="debian"
+      AC_MSG_RESULT(Debian)
+
+   elif test -f "/etc/SuSE-release"; then
+      perceus_service_start="/sbin/service {service} start"
+      perceus_service_stop="/sbin/service {service} stop"
+      perceus_service_on="/sbin/chkconfig {service} on"
+      perceus_service_off="/sbin/chkconfig {service} off"
+      perceus_inetd_restart="/sbin/service xinetd restart && /sbin/chkconfig xinetd on"
+      if grep -qi ^openSuse /etc/SuSE-release; then
+         perceus_operating_system="Open SuSE"
+      elif grep -i sles /etc/SuSE-release; then
+         perceus_operating_system="SLES"
+      else
+         perceus_operating_system="SuSE"
+      fi
+      perceus_distribution_release_file="/etc/SuSE-release"
+      perceus_init_format="suse"
+      AC_MSG_RESULT(SuSE Linux)
+   
+   elif test -f "/etc/slackware-version"; then
+      perceus_service_start="/etc/rc.d/rc.{service} start"
+      perceus_service_stop="/etc/rc.d/rc.{service} stop"
+      perceus_service_on="/usr/bin/chmod +x /etc/rc.d/rc.{service}"
+      perceus_service_off="/usr/bin/chmod -x /etc/rc.d/rc.{service}"
+      perceus_inetd_restart="grep -q \"^{service}\" /etc/inetd.conf || echo \"You must enable {service}!\""
+      perceus_distribution_release_file="/etc/slackware-version"
+      perceus_operating_system="slackware"
+      perceus_init_format="slackware"
+      AC_MSG_RESULT(Slackware)
+      AC_MSG_CHECKING(for '/sbin/start-stop-daemon')
+      if test -x "/sbin/start-stop-daemon" ; then
+         AC_MSG_RESULT(ok)
+      else
+         AC_MSG_RESULT(error)
+         echo "***NOT FOUND***"
+         echo
+         echo "The Perceus init script utilizes the 'start-stop-daemon' utility which is"
+         echo "not installed! Please download and install apps-sys-utils-start-stop-daemon"
+         echo "from http://developer.axis.com/download/distribution/"
+         echo
+         echo "***CONFIGURE FAILED***"
+         exit 1;
+      fi
+
+   elif test -f "/etc/redhat-release"; then
+      perceus_service_start="/sbin/service {service} start"
+      perceus_service_stop="/sbin/service {service} stop"
+      perceus_service_on="/sbin/chkconfig {service} on"
+      perceus_service_off="/sbin/chkconfig {service} off"
+      perceus_inetd_restart="/sbin/service xinetd restart && /sbin/chkconfig xinetd on"
+      perceus_operating_system="Red Hat"
+      perceus_distribution_release_file="/etc/redhat-release"
+      perceus_init_format="redhat"
+      AC_MSG_RESULT(Red Hat Linux or compatible)
+
+   else
+      AC_MSG_RESULT(error)
+      echo "***UNSUPPORTED LINUX DISTRIBUTION***"
+      echo
+      echo "Your Linux distribution could not be identified!"
+      echo
+      echo "***CONFIGURE FAILED***"
+      exit 1;
+   fi
+   
+   AC_SUBST(perceus_service_start)
+   AC_SUBST(perceus_service_stop)
+   AC_SUBST(perceus_service_on)
+   AC_SUBST(perceus_service_off)
+   AC_SUBST(perceus_inetd_restart)
+   AC_SUBST(perceus_operating_system)
+   AC_SUBST(perceus_distribution_release_file)
+   AC_SUBST(perceus_init_format)
+
+   AC_PATH_PROG(NASM, nasm)
+   if test -z "$NASM"; then
+      AC_MSG_ERROR([nasm not found])
+   fi
+   
+   AC_PATH_PROG(PERLBIN, perl)
+   if test -z "$PERLBIN"; then
+      AC_MSG_ERROR([perl not found])
+   fi
+   
+   AC_SUBST(PERLBIN)
+   
+   AC_MSG_CHECKING(for Unix::Syslog Perl module)
+   `$PERLBIN -MUnix::Syslog -e 'exit 0;' >/dev/null 2>&1`
+   if test $? != "0"; then
+     AC_MSG_RESULT(error)
+     echo "***NOT FOUND***"
+     echo
+     echo "Download it from: http://www.perceus.org/downloads/perceus/v1.x/dependencies/"
+     echo
+     echo "***CONFIGURE FAILED***"
+     exit 1
+   fi
+   AC_MSG_RESULT(ok)
+   
+   AC_MSG_CHECKING(for IO::Interface Perl module)
+   `$PERLBIN -MIO::Interface -e 'exit 0;' >/dev/null 2>&1`
+   if test $? != "0"; then
+     AC_MSG_RESULT(error)
+     echo "***NOT FOUND***"
+     echo
+     echo "Download it from: http://www.perceus.org/downloads/perceus/v1.x/dependencies/"
+     echo
+     echo "***CONFIGURE FAILED***"
+     exit 1
+   fi
+   AC_MSG_RESULT(ok)
+   
+   AC_MSG_CHECKING(for Net::ARP Perl module)
+   `$PERLBIN -MNet::ARP -e 'exit 0;' >/dev/null 2>&1`
+   if test $? != "0"; then
+     AC_MSG_RESULT(error)
+     echo "***NOT FOUND***"
+     echo
+     echo "Download it from: http://www.perceus.org/downloads/perceus/v1.x/dependencies/"
+     echo
+     echo "***CONFIGURE FAILED***"
+     exit 1
+   fi
+   AC_MSG_RESULT(ok)
+   
+   AC_MSG_CHECKING(for IO::Socket Perl module)
+   `$PERLBIN -MIO::Socket -e 'exit 0;' >/dev/null 2>&1`
+   if test $? != "0"; then
+     AC_MSG_RESULT(error)
+     echo "***NOT FOUND***"
+     echo
+     echo "This Perl module should come with your operating system."
+     echo
+     echo "***CONFIGURE FAILED***"
+     exit 1
+   fi
+   AC_MSG_RESULT(ok)
+   
+   AC_MSG_CHECKING(for DBI Perl module)
+   `$PERLBIN -MDBI -e 'exit 0;' >/dev/null 2>&1`
+   if test $? != "0"; then
+     AC_MSG_RESULT(error)
+     echo "***NOT FOUND***"
+     echo
+     echo "This Perl module should come with your operating system."
+     echo
+     echo "***CONFIGURE FAILED***"
+     exit 1
+   fi
+   AC_MSG_RESULT(ok)
+   
+   AC_MSG_CHECKING(for DB_File Perl module)
+   `$PERLBIN -MDB_File -e 'exit 0;' >/dev/null 2>&1`
+   if test $? != "0"; then
+     AC_MSG_RESULT(error)
+     echo "***NOT FOUND***"
+     echo
+     echo "This Perl module should come with your operating system."
+     echo
+     echo "***CONFIGURE FAILED***"
+     exit 1
+   fi
+   AC_MSG_RESULT(ok)
+   
+   AC_MSG_CHECKING(for Fcntl Perl module)
+   `$PERLBIN -MFcntl -e 'exit 0;' >/dev/null 2>&1`
+   if test $? != "0"; then
+     AC_MSG_RESULT(error)
+     echo "***NOT FOUND***"
+     echo
+     echo "This Perl module should come with your operating system."
+     echo
+     echo "***CONFIGURE FAILED***"
+     exit 1
+   fi
+   AC_MSG_RESULT(ok)
+   
+   AC_MSG_CHECKING(for File::Path Perl module)
+   `$PERLBIN -MFile::Path -e 'exit 0;' >/dev/null 2>&1`
+   if test $? != "0"; then
+     AC_MSG_RESULT(error)
+     echo "***NOT FOUND***"
+     echo
+     echo "This Perl module should come with your operating system."
+     echo
+     echo "***CONFIGURE FAILED***"
+     exit 1
+   fi
+   AC_MSG_RESULT(ok)
+   
+   AC_MSG_CHECKING(for File::Basename Perl module)
+   `$PERLBIN -MFile::Basename -e 'exit 0;' >/dev/null 2>&1`
+   if test $? != "0"; then
+     AC_MSG_RESULT(error)
+     echo "***NOT FOUND***"
+     echo
+     echo "This Perl module should come with your operating system."
+     echo
+     echo "***CONFIGURE FAILED***"
+     exit 1
+   fi
+   AC_MSG_RESULT(ok)
+   
+   AC_MSG_CHECKING(for File::Copy Perl module)
+   `$PERLBIN -MFile::Copy -e 'exit 0;' >/dev/null 2>&1`
+   if test $? != "0"; then
+     AC_MSG_RESULT(error)
+     echo "***NOT FOUND***"
+     echo
+     echo "This Perl module should come with your operating system."
+     echo
+     echo "***CONFIGURE FAILED***"
+     exit 1
+   fi
+   AC_MSG_RESULT(ok)
+   
+   AC_MSG_CHECKING(for Getopt::Long Perl module)
+   `$PERLBIN -MGetopt::Long -e 'exit 0;' >/dev/null 2>&1`
+   if test $? != "0"; then
+     AC_MSG_RESULT(error)
+     echo "***NOT FOUND***"
+     echo
+     echo "This Perl module should come with your operating system."
+     echo
+     echo "***CONFIGURE FAILED***"
+     exit 1
+   fi
+   AC_MSG_RESULT(ok)
+   
+   # Perceus Version check and export
+   AC_MSG_CHECKING(for perceus version)
+   perceus_version=$PACKAGE_VERSION
+   AC_MSG_RESULT($perceus_version)
+   AC_SUBST(perceus_version)
+
+   # Perceus BUILD check and export
+   AC_MSG_CHECKING(for perceus build)
+   if test -f BUILD; then
+      perceus_build=`cat BUILD`
+      perceus_release=$perceus_build
+   else
+      perceus_build="unknown"
+      perceus_release=$perceus_build
+   fi
+   AC_MSG_RESULT($perceus_build)
+   AC_SUBST(perceus_build)
+   AC_SUBST(perceus_release)
+
+else
+   
+   AC_MSG_CHECKING(for libc.so.0)
+   LIBC=`gcc -print-file-name=libc.so.0`
+   if test -e "$LIBC"; then
+      AC_MSG_RESULT($LIBC)
+   else
+      AC_MSG_RESULT("no")
+      echo "ERROR: Shared library for libc was not found!"
+      exit 1
+   fi
+   AC_SUBST(LIBC)
+
+   BUSYBOX_LIBS="$BUSYBOX_LIBS $LIBC"
+
+   AC_MSG_CHECKING(for $ld_name.so.2)
+   LIB_LD=`gcc -print-file-name=ld-uClibc.so.0`
+   if test -e "$LIB_LD"; then
+      AC_MSG_RESULT($LIB_LD)
+   else
+      AC_MSG_RESULT("no")
+      echo "ERROR: Shared library for dynamic linking (ld-uClibc.so.0) was not found!"
+      exit 1
+   fi
+   AC_SUBST(LIB_LD)
+   BUSYBOX_LIBS="$BUSYBOX_LIBS $LIB_LD"
+
+   AC_MSG_CHECKING(for libresolv.so.0)
+   LIBRESOLV=`gcc -print-file-name=libresolv.so.0`
+   if test -e "$LIBRESOLV"; then
+      AC_MSG_RESULT($LIBRESOLV)
+   else
+      AC_MSG_RESULT("no")
+      echo "ERROR: Shared library for name resolution was not found!"
+      exit 1
+   fi
+   AC_SUBST(LIBRESOLV)
+   BUSYBOX_LIBS="$BUSYBOX_LIBS $LIBRESOLV"
+
+fi
+
+
+AC_SUBST(BUSYBOX_LIBS)
+
+
+sysconfdir="/etc"
+AC_EXPAND_DIR(detectsysconfigdir, "$sysconfdir/detect")
+AC_DEFINE_UNQUOTED(DETECTSYSCONFIGDIR, "$detectsysconfigdir", [Full path to detect configuration directory])
+AC_SUBST(DETECTSYSCONFIGDIR)
+
+AC_EXPAND_DIR(fullbindir, "$bindir")
+AC_DEFINE_UNQUOTED(BINDIR, "$fullbindir", [Full path to the bin directory])
+AC_SUBST(BINDIR)
+
+AC_EXPAND_DIR(fullsbindir, "$sbindir")
+AC_DEFINE_UNQUOTED(SBINDIR, "$fullsbindir", [Full path to the sbin directory])
+AC_SUBST(PERCEUSSBINDIR)
+
+AC_EXPAND_DIR(fulllocalstatedir, "$localstatedir")
+AC_DEFINE_UNQUOTED(LOCALSTATEDIR, "$fulllocalstatedir", [Full path to the localstate directory])
+AC_SUBST(LOCALSTATEDIR)
+
+AC_EXPAND_DIR(fulllibexecdir, "$libexecdir")
+AC_DEFINE_UNQUOTED(LIBEXECDIR, "$fulllibexecdir", [Full path to the libexec directory])
+AC_SUBST(LIBEXECDIR)
+
+
+# Must null'ilfy these for detect build so things don't get installed automatically
+detect_sbindir=""
+AC_SUBST(detect_sbindir)
+
+AC_OUTPUT([Makefile
+   perceus.spec
+   post/Makefile
+   src/Makefile
+   src/provisiond/Makefile
+   src/ethinfo/Makefile
+   src/detect/Makefile
+   scripts/Makefile
+   scripts/bin/Makefile
+   scripts/demos/Makefile
+   scripts/init.d/Makefile
+   scripts/init.d/debian-perceus
+   scripts/init.d/debian-provisiond
+   scripts/init.d/gentoo-perceus
+   scripts/init.d/gentoo-provisiond
+   scripts/init.d/nsa-perceus
+   scripts/init.d/nsa-provisiond
+   scripts/init.d/redhat-perceus
+   scripts/init.d/redhat-provisiond
+   scripts/init.d/slackware-perceus
+   scripts/init.d/slackware-provisiond
+   scripts/init.d/suse-perceus
+   scripts/init.d/suse-provisiond
+   scripts/initramfs/Makefile
+   scripts/initramfs/initramfs.conf
+   scripts/lib/Makefile
+   scripts/lib/Perceus/Makefile
+   scripts/lib/Perceus/DB/Makefile
+   scripts/lib/Perceus/Interface/Makefile
+   scripts/share/Makefile
+   scripts/nodescripts/Makefile
+   scripts/cgi/Makefile
+   etc/Perceus_Include.pm
+   etc/Makefile
+   images/Makefile
+   3rd_party/Makefile
+   man/Makefile
+   modules/Makefile
+   modules/groupfile/Makefile
+   modules/hostname/Makefile
+   modules/ipaddr/Makefile
+   modules/modprobe/Makefile
+   modules/masterauth/Makefile
+   modules/syncnodes/Makefile
+   modules/passwdfile/Makefile
+   modules/slurm/Makefile
+   modules/stateful/Makefile
+   docs/perceus-userguide.tex
+   docs/perceus-nsa-quickstart.tex
+])

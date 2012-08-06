@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+
+# We wrap kexec so we can make sure we only bring down the kernel drivers
+
+. /etc/functions
+. /etc/initramfs.conf
+
+dprint 0 "\nPreparing to Switch to new operating system, standby...\n"
+
+cd /
+
+if [ ! -x /libexec/kexec -a -z "$KEXEC_LEGACY" ]; then
+   dprint 0 "Retrieving kexec\n"
+   getfile bin/kexec
+   chmod +x kexec
+   mv kexec /libexec/
+fi
+
+if [ ! -x /libexec/kexec-legacy ]; then
+   dprint 0 "Retrieving kexec legacy\n"
+   getfile bin/kexec-legacy
+   chmod +x kexec-legacy
+   mv kexec /libexec/
+fi
+
+cat /proc/mounts | while read dev mp type opts freq passno; do
+   if [ "x$type" = "xnfs" ]; then
+      dprint 0 "Unmounting $dev\n"
+      umount $mp
+   fi
+done
+
+dprint 0 "Bringing down network\n"
+
+if [ -e "/found_nics" ]; then
+   for dev in `cat /found_nics`; do
+      ifconfig $dev down >/dev/null 2>&1
+   done
+fi
+
+dprint 0 "Un-loading device drivers\n"
+
+unload_module scsi_mod
+unload_module ib_ipoib
+
+if [ -e "/etc/modulerc" ]; then
+   for i in `cat /etc/modulerc`; do
+      unload_module $i
+   done
+fi
+
+for i in `/sbin/detect -q`; do
+   unload_module $i
+done
+
+if [ -z "$KEXEC_LEGACY" ]; then
+   dprint 0 "Calling kexec .... "
+   sleep 2
+   /libexec/kexec "$@"
+fi
+
+dprint 0 "Calling kexec-legacy .... "
+sleep 2
+/libexec/kexec-legacy "$@"
+
+echo
+sleep 3
+
+echo "ERROR: If you are reading this message, there was a problem switching to the"
+echo "ERROR: VNFS image!"
+
+reboot30

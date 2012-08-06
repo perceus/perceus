@@ -1,0 +1,76 @@
+#!/bin/sh
+
+CONFIG=/etc/perceus/modules/ipaddr
+
+if [ -f "$CONFIG" ]; then
+   exit
+fi
+
+mkdir -p `dirname $CONFIG`
+cat <<EOF > $CONFIG
+# This file will enable you to configure static ip addresses for the
+# provisioned nodes.
+# 
+# Specify the node's name and then the devices that you wish to configure
+# followed by their configuration.
+#
+# You can also specify groups of nodes by implementing a wild card or a
+# regular expression to match the node name. This is usually used in
+# conjunction with either a DHCP configuration or internally used
+# defaults.
+#
+# If there are multiple matches (e.g. a glob that matches a group of nodes
+# followed by a more specific match) the last match gets the priority and
+# all earlier matches are ignored.
+#
+# Usage:
+#   nodename/pattern device(config options):ipaddr/netmask/gw device2:ipaddr/netmask
+#
+# The '[default]' entry will do different things depending on the field they
+# are defined in.
+#
+#   ipaddr field:   Discovers the IP address via /etc/hosts.  If a
+#                   ":string" is given, then it will key off of a
+#                   different hostname in /etc/hosts.  NAME and NIC in
+#                   a ":string" will be replaced by the nodename or
+#                   device name, respectively.
+#   netmask field:  By default it will take the configured netmask of this
+#                   systems "private" network interface. If a ":string" is
+#                   given, then it will use that device's netmask.
+#   gateway field:  Like the netmask default option, it will locate the
+#                   private network's ipaddress on this system and use that
+#                   as the node's gateway. If a ":string" is given, then it
+#                   will use that device's ipaddress.
+#
+# You may optionally supply other options to the network configuration that
+# should be included in the network configuration (e.g. MTU=9000).  Use the
+# '&' character to delimit multiple options.
+#
+# Examples:
+#   * eth0:[default]/[default:eth1]/[default:eth1]
+#   n0000 eth0:192.168.1.100/255.255.255.0/192.168.1.1
+#   io* eth0(MTU=9000&OTHER=foo):[default]/[default]/192.168.1.1
+#   foo eth1:[default:other_host_name]/255.255.0.0
+#   spare eth0:dhcp eth1:dhcp
+#
+# Caution! Don't assign any static IP addresses in the DHCP range;
+# otherwise, you may trample on another system's address.
+#
+# Note:  The ipaddr module currently generates network device
+# configurations compatible with Caos, Red Hat, and SuSE Linux
+# distributions.
+
+# This default action will try and figure out what the IP address should be
+# based on the master's /etc/hosts. If there is no entry in /etc/hosts for
+# the node getting provisioned, it will fall back to DHCP.
+
+* eth0:[default]/[default] eth1:[default]/[default]/[default]
+
+EOF
+
+cat <<EOF
+
+Created ipaddr module configuration file at:
+   $CONFIG
+
+EOF

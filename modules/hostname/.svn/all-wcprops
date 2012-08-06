@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/perceus/!svn/ver/2374/1.6/modules/hostname
+END
+49-hostname.sh
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/perceus/!svn/ver/2374/1.6/modules/hostname/49-hostname.sh
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/perceus/!svn/ver/2148/1.6/modules/hostname/Makefile.am
+END
+defaultroles
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/perceus/!svn/ver/2148/1.6/modules/hostname/defaultroles
+END

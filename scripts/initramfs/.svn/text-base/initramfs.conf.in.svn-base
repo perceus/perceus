@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+
+# Automatically load these kernel modules
+ENABLE_KMODS="sd_mod"
+
+# Which network devices should we try and load
+DEVS="eth0 eth1 eth2 eth3 eth4 eth5 eth6 eth7 ib0 ib1"
+
+# Max tries to wait for network devices to become active
+MAX_TRIES=5
+
+# Perceus version and build
+VERSION=@perceus_version@
+BUILD=@perceus_build@

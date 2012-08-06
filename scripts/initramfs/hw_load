@@ -1,0 +1,28 @@
+#!/bin/sh
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+
+
+if [ ! -f "/sbin/detect" ]; then
+   exit
+fi
+
+. /etc/functions
+. /etc/initramfs.conf
+
+cat /etc/modulerc 2>/dev/null | while read i; do
+   load_module $i
+done
+
+/sbin/detect -q | while read i; do
+   load_module $i
+done
+
+for req_driver in $ENABLE_KMODS; do
+   load_module $req_driver
+done
+
+/sbin/mdev -s
+

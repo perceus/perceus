@@ -1,0 +1,101 @@
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/perceus/!svn/ver/2389/1.6/3rd_party/patches
+END
+xcpu-1.2.3-LINKSTATIC.patch
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/xcpu-1.2.3-LINKSTATIC.patch
+END
+busybox-1.5.1-udhcpc_ipoib.patch
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/busybox-1.5.1-udhcpc_ipoib.patch
+END
+kexec-tools-multiboot_x86_user_h.patch
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/kexec-tools-multiboot_x86_user_h.patch
+END
+dnsmasq-2.45-allow_cluster_name_suffixes.patch
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/dnsmasq-2.45-allow_cluster_name_suffixes.patch
+END
+mdadm-3.0-super-intel_c.patch
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/perceus/!svn/ver/2318/1.6/3rd_party/patches/mdadm-3.0-super-intel_c.patch
+END
+dnsmasq-2.45-ipoib_clid.patch
+K 25
+svn:wc:ra_dav:version-url
+V 78
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/dnsmasq-2.45-ipoib_clid.patch
+END
+linux-2.6.24.3-efi.patch
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/linux-2.6.24.3-efi.patch
+END
+kexec-tools-testing-20070330-efi_iomem.patch
+K 25
+svn:wc:ra_dav:version-url
+V 93
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/kexec-tools-testing-20070330-efi_iomem.patch
+END
+busybox-1.5.1-gcc_static.patch
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/busybox-1.5.1-gcc_static.patch
+END
+kexec-tools-1.101-perceusfixes.patch
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/kexec-tools-1.101-perceusfixes.patch
+END
+dnsmasq-2.45-perceus.patch
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/dnsmasq-2.45-perceus.patch
+END
+xfsprogs-3.1.0-glibc-fixes.patch
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/perceus/!svn/ver/2389/1.6/3rd_party/patches/xfsprogs-3.1.0-glibc-fixes.patch
+END
+kexec-tools-testing-20080324-static_libs.patch
+K 25
+svn:wc:ra_dav:version-url
+V 95
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/kexec-tools-testing-20080324-static_libs.patch
+END
+dnsmasq-2.45-no_max_label_check.patch
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/dnsmasq-2.45-no_max_label_check.patch
+END
+kexec-tools-testing-20070330-real-mode-entry16.patch
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/kexec-tools-testing-20070330-real-mode-entry16.patch
+END
+kexec-tools-multiboot-getpagesize.patch
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/perceus/!svn/ver/2148/1.6/3rd_party/patches/kexec-tools-multiboot-getpagesize.patch
+END

@@ -1,0 +1,13 @@
+Source: perceus
+Section: System Tools
+Priority: extra
+Maintainer: Infiscale <support@infiscale.com>
+Build-Depends: debhelper (>= 7), perl, perl-modules, libdbi-perl, libunix-syslog-perl, libio-interface-perl, libnet-arp-perl, make (>= 3.80), autoconf (>= 2.59), nasm, openssl, elfutils, libelf-dev, libyaml-perl,libdbi-perl,bzip2,rsync
+Standards-Version: 3.7.3
+Homepage: <infiscale.com>
+
+Package: perceus
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: <Perceus 1.6.2>
+ <The defacto stateless provisioning solution for Cloud and HPC from Infiscale. Perceus replaces Warewulf for provisioning.>

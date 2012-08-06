@@ -1,0 +1,24 @@
+#!/bin/sh
+
+DIR=/etc/perceus/modules/groupfile
+
+if [ -d "$DIR" ]; then
+   exit
+fi
+
+mkdir -p $DIR
+cp /etc/group $DIR/all
+
+cat <<EOF
+This module is used for customizing the group accounts on the nodes when they
+connect to the Perceus server in the provisionary states that you have
+defined. Add the required passwd file entries to the appropriate files in:
+
+   $DIR
+
+The files will automatically get syncronized the next time the node "checks
+in". The group file "all" in the above directory contains the default
+entries that all nodes will get (copied from the master). Modify this as
+needed and add the specific entries in the appropriate files.
+
+EOF

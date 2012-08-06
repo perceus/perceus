@@ -1,0 +1,28 @@
+About Warewulf:
+
+   Warewulf is a solution that grew out of necessity for simple,
+   scalable cluster management. What makes Warewulf so revolutionary is
+   the ability to retain flexibility while making management of clusters
+   simple and scalable.
+
+   Warewulf has become the standard in stateless Node Operating System
+   provisioning for clusters.
+
+Moving onto Perceus:
+
+   While Warewulf is a very effective solution for clustering, Perceus
+   expands on what Warewulf already accels at and takes it and the next
+   logical steps to the next level.
+
+   The Design of Perceus includes the following points:
+
+      1. System level provisioning with a strong emphasis on stateless
+      2. Scalable system management and provisioning model
+      3. Simplicity in design
+      4. Flexibility both in modules and core functionality
+      5. Intuitive for a moderate level administrator
+      6. Linux distribution neutral (eventually OS neutral)
+
+   Plus all of the features and design considerations which has made
+   Warewulf so successful!
+

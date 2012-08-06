@@ -1,0 +1,217 @@
+.\" Process this file with
+.\" groff -man -Tascii foo.1
+.\"
+.TH Perceus
+.SH NAME
+PROVISION ENTERPRISE RESOURCES AND CLUSTERS ENABLING
+UNIFORM SYSTEMS with PERCEUS
+.SH SYNOPSIS
+.B perceus (options) [command] (subcommand) (options) ...
+.SH DESCRIPTION
+.B perceus
+Perceus is the next generation of enterprise and cluster provisioning
+toolkit. Created by the developers of Warewulf (one of the most utilized
+Linux cluster toolkits), Perceus redefines the limits of scalability,
+flexibility and simplicity. Perceus has the advantage of being planned
+out from inception, and with this we are able to deliver what we feel is
+the definitive solution for all cluster platforms regardless of their
+clustering needs or software budget.
+.SH OPTIONS
+.TP
+-i, --nodeid
+Reference nodes by their NodeID instead of their hostname. This maybe
+necessary if there are duplicate hostnames configured (which may or not
+be desired).
+.TP
+-v, --version
+Display the version and build of Perceus.
+.TP
+-d, --debug
+Run perceus in debug mode. This is very effective to see what Perceus is
+doing if there is a fault or bug. Use this option when sending help
+requests to the maintainers or to the email list.
+.TP
+-h, --help
+Show the usage summary from the program.
+
+.SH COMMANDS
+This is the list of commands that Perceus will take. Options in square
+brackets ([]) are require arguments, and options in parenthesis are
+optional. Options in double square brackets ([[]]) are required and can
+be a list, glob or range in the format of n[0000-0010]. Similarly
+options in double parenthesis are optional and can also take a list,
+glob or range.
+.TP
+.I Node Commands
+The "node" commands to Perceus act directly on the node entities. Most
+of these commands will work on the node hostname configured, but when
+using the -i option, you can substitute the NodeID for the hostname.
+.TP
+.B node add [NodeID] (hostname)
+Import a new node with the provided NodeID (MAC address) into the
+database. You can optionally specify the nodes hostname that you wish
+to use, otherwise the default next in line hostname defined in
+/etc/perceus/defaults.conf will be used.
+.TP
+.B node delete [[hostname]]
+Delete a node or set of nodes from the database. This option is
+obviously very destructive, and has no recovery. You have been warned.
+.TP
+.B node list ((hostname))
+List the configured nodes in the database.
+.TP
+.B node replace [old hostname] [new hostname]
+This option will basically transfer the NodeID configuration from the
+new hostname and superimpose it on old hostname and then deleting the
+new hostname. A typical example is n0005 was just replaced. The new
+hardware is booted, and gets the hostname n0011. The command would be:
+.B node replace n0005 n0011
+This will make n0011 go away, and take over for n0005.
+.TP
+.B node set [key] [value] [[hostname]]
+Most of the node manipulation will be done with this command. The
+following key's are typically modified:
+.B hostname,
+.B group,
+.B vnfs,
+.B enabled
+and
+.B desc.
+.TP
+.B node show ((hostname))
+This command will dump all of the known information about a node from
+the database. Its output is in a format that makes it easy to grep and
+script.
+.TP
+.B node status ((hostname))
+The status output shows the last communication with the node, what it
+was doing, and how long ago. To get real time updates, I recommend to
+team this command with the 
+.B watch
+command so that it gets a screen dump automatically.
+.TP
+.B node summary ((hostname))
+Print the node summary from the database.
+.TP
+.I Group Commands
+Node entities have the ability to assign to them a group name which
+allows you to operate on multiple nodes (or even groups) with one
+command. The group database tag also gets referenced by various modules
+that can be activated or operate on specified groups specifically.
+.TP
+.B group delete [[groupname]]
+Delete any nodes configured for the given groupname(s). This option
+(like its node counterpart) is very destructive, and has no recovery.
+.TP
+.B group list ((groupname))
+List the configured groups in the database.
+.TP
+.B group nodelist ((groupname))
+Similar to the above group list command but this will show not only the
+groups, but also the nodes that are configured for them.
+.TP
+.B group set [key] [value] [[groupname]]
+This command works exactly like the node counterpart set command defined
+above (except it can work on all nodes of the listed groups).
+.TP
+.B group status ((groupname))
+The status output shows the last communication with the node, what it
+was doing, and how long ago. To get real time updates, I recommend to
+team this command with the
+.B watch
+command so that it gets a screen dump automatically.
+.TP
+.B group summary ((groupname))
+Print the node summary that are part of the listed group(s) from the database.
+.TP
+.I VNFS Commands
+Perceus provisions nodes according to their VNFS (Virtual Node File
+System). It is a file system structure (chroot'able) that is used for
+creating a template of the node file system. Multiple nodes can utilize
+the exact same image which facilitates large scalable systems
+management.
+.TP
+.B vnfs clone [original vnfs name] [new vnfs name]
+Copy a VNFS name to a new name. This is very beneficial for development
+of VNFS capsules without risking damaging a working copy.
+.TP
+.B vnfs mount [vnfs name]
+To make changes to a VNFS capsule you must first mount the capsule. The
+specifics of how and where it gets mounted are specific to the capsule
+itself, but the standard location is /mnt/[vnfs name]. Once the capsule
+has been mounted, you can do standard file system operations on that
+directory/chroot.
+.TP
+.B vnfs umount [vnfs name]
+Once you have completed making any changes to your VNFS chroot
+directory, you will need to un-mount it to make the changes available to
+the nodes.
+.TP
+.B vnfs close [vnfs name]
+Similar to vnfs umount except that this typically does not rebuild the
+bootable image. Depending on the type of capsule you are running,
+changes maybe discarded, or stored for the next time you mount the VNFS
+(behavior is specific to the VNFS itself).
+.TP
+.B vnfs delete [vnfs name]
+Delete/remove an imported VNFS capsule
+.TP
+.B vnfs import /path/to/file.vnfs
+This is how you import a VNFS capsule into Perceus itself. Once
+imported it will take you through a general configuration and
+immediately be able to provision to nodes.
+.TP
+.B vnfs export [vnfs name] ((/path/to/file.vnfs))
+Export or backup a currently installed VNFS capsule including its
+configuration and any customizations that have been made. The file argument
+is optional, and if you don't specify one it will be determined for you.
+.TP
+.B vnfs list ((vnfs name))
+Print a list of the imported VNFS capsules. If any are mounted, it will
+show here.
+.TP
+.B vnfs livesync [vnfs name] ((hostname))
+This feature will update a live running VNFS on a node. It is dangerous,
+and may require some tuning via the VNFS livesync.skip configuration
+file. In general, pay special attention to running this command as it is
+dangerous. You have been warned.
+.TP
+.I Module Commands
+Perceus utilizes a module interface for extending extra functionality
+and features into Perceus itself. Because of the structure and design of
+the nodescripts that most modules integrate, there is the possibility of
+a faulty module breaking provisioning (only while that module is
+active). Only install trusted modules and watch for undesirable
+behavior.
+.TP
+.B module import /path/to/file.pmod
+Perceus will come with several very functional modules when first
+installed but if/when you need to run a specific module this is the
+command you will need to import that module file into Perceus. Once
+imported, the module will not be activated until specifically directed
+to do so.
+.TP
+.B module activate [module name] ((provisionary state))
+To run a module (or make it active) you must tell Perceus where/when you
+want this module to run. Modules usually have a default provisionary
+state (e.g. init/all) which will be used if you don't specify the
+provisionary state argument.
+.TP
+.B module deactivate [module name] ((provisionary state))
+This will disable a module in a given state. If no provisionary state is
+given, then the module is disabled in all states.
+.TP
+.B module delete [module name]
+Delete/remove a perceus module from perceus.
+.TP
+.B module list ((module name))
+Print a list of the imported modules.
+.TP
+.B module summary ((module name))
+Print a list of all modules and what provisionary states they are active
+in.
+
+.SH BUGS
+Email the primary author if any bugs are found.
+.SH AUTHOR
+Greg Kurtzer <gmk@infiscale.com>

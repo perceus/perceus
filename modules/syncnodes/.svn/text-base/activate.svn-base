@@ -1,0 +1,12 @@
+#!/bin/sh
+
+
+cat <<EOF
+
+Warning, this module will attempt to keep the nodes in sync with their
+current configurations. Some configurations will require the node to be
+rebooted. This module does some basic checks to make sure that the node
+is not in "use" when potentially destructive changes are implemented,
+so keep it in mind when using this module.
+
+EOF

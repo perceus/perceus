@@ -1,0 +1,6 @@
+#!/bin/sh
+
+mkdir -p /dev/ >/dev/null 2>&1
+mknod /dev/console c 5 1
+
+exec /sbin/init >/dev/console 2>&1 </dev/console

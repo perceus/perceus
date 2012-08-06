@@ -1,0 +1,27 @@
+commit 4291d691b66f65695b5b4be22b80fd00da73b544
+Author: NeilBrown <neilb@xxxxxxx>
+Date:   Thu Jun 4 12:29:21 2009 +1000
+
+    super-intel: fix test on failed_disk_num.
+    
+    We sometimes set failed_disk_num to ~0.
+    However we cannot test for equality with that as  failed_disk_num
+    is 8bit and ~0 is probably 32bit with lots of 1's.
+    So test if ~failed_disk_num is 0 instead.
+    
+    Reported-By: "Mr. James W. Laferriere" <babydr@xxxxxxxxxxxxxxxx>
+    Signed-off-by: NeilBrown <neilb@xxxxxxx>
+
+diff --git a/super-intel.c b/super-intel.c
+index 73fe5fa..7e2a086 100644
+--- a/super-intel.c
++++ b/super-intel.c
+@@ -3629,7 +3629,7 @@ static int mark_failure(struct imsm_dev *dev, struct imsm_disk *disk, int idx)
+ 
+ 	disk->status |= FAILED_DISK;
+ 	set_imsm_ord_tbl_ent(map, slot, idx | IMSM_ORD_REBUILD);
+-	if (map->failed_disk_num == ~0)
++	if (~map->failed_disk_num == 0)
+ 		map->failed_disk_num = slot;
+ 	return 1;
+ }

@@ -1,0 +1,195 @@
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+
+  _perceus()
+  {
+          local cur second third fourth nodes capsules groups
+
+          COMPREPLY=()
+          cur=${COMP_WORDS[COMP_CWORD]}
+          second=${COMP_WORDS[1]}
+          third=${COMP_WORDS[2]}
+          fourth=${COMP_WORDS[3]}
+ 
+          # first level commands
+          if [ $COMP_CWORD -eq 1 ]; then
+                  COMPREPLY=( $( compgen -W "node group vnfs module info init contact configure update help" -- $cur ) )
+
+          # completion for 2nd level subcommands ie "perceus node"
+          elif [ $COMP_CWORD -eq 2 ]; then
+
+               case "${second}" in
+	        "node"	)
+			COMPREPLY=( $( compgen -W "add delete list set status show summary" -- $cur ) );;
+		"group"	)
+                 	COMPREPLY=( $( compgen -W "delete list nodelist set status show summary" -- $cur ) );;
+		"vnfs"	)
+			COMPREPLY=( $( compgen -W "list import delete mount rebuild umount close clone configure livesync export" -- $cur ) );;
+		"module")
+                  	COMPREPLY=( $( compgen -W "import list summary activate deactivate delete states" -- $cur ) );;
+		"info"	)
+			COMPREPLY=( $( compgen -W "about config system" -- $cur ) );;
+		"init"	)
+			COMPREPLY=( $( compgen -W "db all" -- $cur ) );;
+		"configure" )
+			COMPREPLY=( $( compgen -W "nfs dhcpd apache sshkeys" -- $cur ) );;
+		"contact"	)
+			COMPREPLY=( $( compgen -W "register support" -- $cur ) );;
+		esac
+		
+	  # completion for 3rd level subcommands ie "perceus node set" 
+          elif [ $COMP_CWORD -eq 3 ]; then
+		
+		# complete for "perceus node"
+	
+		case "${second}" in
+	         "node"	 )
+			   case "${third}" in
+			    "add" 	);;
+			    "list" 	)
+				COMPREPLY=( $( compgen -W "$(perceus -e node list)" -- $cur ) );;
+			    "summary" 	)
+				COMPREPLY=( $( compgen -W "$(perceus -e node list)" -- $cur ) );;
+			    "set" 	)
+				COMPREPLY=( $( compgen -W "hostname hwaddr group vnfs desc boot enabled debug" -- $cur ) );;
+			    "show" 	)
+				COMPREPLY=( $( compgen -W "$(perceus -e node list)" -- $cur ) );;
+			    "status" 	)
+				COMPREPLY=( $( compgen -W "$(perceus -e node list)" -- $cur ) );;
+			    "delete" 	)
+				COMPREPLY=( $( compgen -W "$(perceus -e node list)" -- $cur ) );;
+			    "replace" 	)
+				COMPREPLY=( $( compgen -W "$(perceus -e node list)" -- $cur ) );;
+			   esac
+			   ;;
+		 "group" )
+			   case "${third}" in
+			    "list"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e group list)" -- $cur ) );;
+			    "nodelist"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e group list)" -- $cur ) );;
+			    "summary"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e group list)" -- $cur ) );;
+			    "set"	)
+				COMPREPLY=( $( compgen -W "hostname hwaddr group vnfs desc boot enabled debug" -- $cur ) );;
+			    "show"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e group list)" -- $cur ) );;
+			    "delete"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e group list)" -- $cur ) );;
+			   esac
+			   ;;
+		 "vnfs"	 )
+			   case "${third}" in
+			    "import"	)
+				_filedir '@(vnfs)'
+				;;
+			    "list"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | awk '{print $1}')" -- $cur ) );;
+			    "export"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | awk '{print $1}')" -- $cur ) );;
+			    "mount"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | grep -v mounted | awk '{print $1}')" -- $cur ) );;
+			    "umount"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | grep mounted | awk '{print $1}')" -- $cur ) );;
+			    "rebuild"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | grep mounted | awk '{print $1}')" -- $cur ) );;
+			    "close"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | grep mounted | awk '{print $1}')" -- $cur ) );;
+			    "configure"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | grep -v mounted | awk '{print $1}')" -- $cur ) );;
+			    "delete"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | awk '{print $1}')" -- $cur ) );;
+			    "clone"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | awk '{print $1}')" -- $cur ) );;
+			    "livesync"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | grep -v mounted | awk '{print $1}')" -- $cur ) );;
+			   esac
+			   ;;
+		 "module")
+			   case "${third}" in
+			    "import"	)
+				_filedir '@(pmod)'
+				;;
+			    "list"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e module list)" -- $cur ) );;
+			    "summary"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e module list)" -- $cur ) );;
+			    "activate"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e module list)" -- $cur ) );;
+			    "deactivate")
+				COMPREPLY=( $( compgen -W "$(perceus -e module list)" -- $cur ) );;
+			    "delete"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e module list)" -- $cur ) );;
+			    "states"	)
+				COMPREPLY=( $( compgen -W "$(perceus -e module list)" -- $cur ) );;
+			   esac
+			   ;;	
+		esac
+		
+	  
+	  # completion for 4th level subcommands ie "perceus node set Vnfs=Something $nodename"
+          elif [ $COMP_CWORD -gt 3 ]; then
+		
+		case "${second}" in
+		 "vnfs"		)
+			case "${third}" in
+			    "export"	)
+				_filedir 
+				;;
+			esac
+			;;
+		 "node" 	)
+			case "${third}" in
+			 "set"	)
+				if [ ${fourth} == "vnfs" ]; then
+					if [ $COMP_CWORD -gt 4 ]; then
+						COMPREPLY=( $( compgen -W "$(perceus -e node list)" -- $cur ) )
+					else			
+						COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | awk '{print $1}')" -- $cur ) )
+					fi
+				elif [ ${fourth} == "boot" ]; then
+					if [ $COMP_CWORD -gt 4 ]; then
+						COMPREPLY=( $( compgen -W "$(perceus -e node list)" -- $cur ) )
+					else			
+						COMPREPLY=( $( compgen -W "default perceus local" -- $cur ) )
+					fi
+				elif [ ${fourth} != "vnfs" ]; then
+					if [ $COMP_CWORD -gt 4 ]; then
+						COMPREPLY=( $( compgen -W "$(perceus -e node list)" -- $cur ) )
+					fi
+				fi;;
+			esac
+			;;
+		 "group"	)
+			case "${third}" in
+			 "set"	)
+				if [ ${fourth} == "vnfs" ]; then
+					if [ $COMP_CWORD -gt 4 ]; then
+						COMPREPLY=( $( compgen -W "$(perceus -e group list)" -- $cur ) )
+					else			
+						COMPREPLY=( $( compgen -W "$(perceus -e vnfs list | awk '{print $1}')" -- $cur ) )
+					fi
+				elif [ ${fourth} == "boot" ]; then
+					if [ $COMP_CWORD -gt 4 ]; then
+						COMPREPLY=( $( compgen -W "$(perceus -e group list)" -- $cur ) )
+					else			
+						COMPREPLY=( $( compgen -W "default perceus local" -- $cur ) )
+					fi
+				elif [ ${fourth} != "vnfs" ]; then
+					if [ $COMP_CWORD -gt 4 ]; then
+						COMPREPLY=( $( compgen -W "$(perceus -e group list)" -- $cur ) )
+					fi
+				fi;;
+			esac
+			;;
+		esac
+          fi
+
+   return 0
+
+  }
+
+complete -o filenames -F _perceus perceus
+

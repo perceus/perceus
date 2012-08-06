@@ -1,0 +1,153 @@
+#!/bin/bash
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+# SuSE compatible Perceus init script
+
+# chkconfig: 345 11 89
+# description: perceusd
+# processname: perceusd
+# pidfile: /var/run/perceusd.pid
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+localstatedir=@localstatedir@
+sbindir=@sbindir@
+sysconfdir=@sysconfdir@
+libexecdir=@libexecdir@
+
+# source function library
+. /etc/rc.status
+
+rc_reset
+
+# source Perceus config if it exists
+if [ -f "/etc/sysconfig/perceus" ]; then
+   . /etc/sysconfig/perceus
+fi
+
+# Check to see if Perceus has been configured
+if [ ! -d "$localstatedir/lib/perceus/database" ]; then
+   echo "You need to initialize Perceus before starting the services!"
+   exit 1
+fi
+
+# Check to see if Perceus DHCP service has been set
+if [ ! -f "/etc/perceus/dnsmasq.conf" ]; then
+   NO_NETWORK_MANAGER=1
+fi
+
+if [ "x$NO_LEASEFILE" = "xyes" -o "x$NO_LEASEFILE" = "x1" ]; then
+   RO_LEASE="--leasefile-ro"
+fi
+
+EXITVAL=0
+
+start() {
+   local RETVAL=0
+   if [ -z "$NO_NETWORK_MANAGER" -a -x $libexecdir/perceus/perceus-dnsmasq ]; then
+      DHCP_OPTS="$DHCP_OPTS $RO_LEASE --dhcp-leasefile=$localstatedir/lib/perceus/dhcpd.leases --conf-file=/etc/perceus/dnsmasq.conf"
+      echo -n "Starting perceus network manager:"
+      startproc $libexecdir/perceus/perceus-dnsmasq $DHCP_OPTS
+      rc_status -v
+      if [ $? -eq 0 ]; then
+         touch /var/lock/subsys/perceus-dnsmasq
+      else
+         RETVAL=1
+      fi
+   fi
+   if [ -x ${sbindir}/perceusd ]; then
+      echo -n "Starting perceusd:"
+      ${sbindir}/perceusd
+      rc_status -v
+      if [ $? -eq 0 ]; then
+         touch /var/lock/subsys/perceusd
+      else
+         RETVAL=1
+      fi
+   fi
+   return $RETVAL
+}
+
+stop() {
+   local RETVAL=0
+   if [ -z "$NO_NETWORK_MANAGER" ]; then
+      echo -n "Stopping perceus network manager:"
+      killproc perceus-dnsmasq
+      rc_status -v
+      if [ $? -eq 0 ]; then
+         rm -f /var/lock/subsys/perceus-dnsmasq
+      else
+         RETVAL=1
+      fi
+   fi
+   echo -n "Stopping perceusd:"
+   killproc perceusd
+   rc_status -v
+   if [ $? -eq 0 ]; then
+      rm -f /var/lock/subsys/perceusd
+   else
+      RETVAL=1
+   fi
+   return $RETVAL
+}
+
+stats() {
+   local RETVAL=0
+   if [ -z "$NO_NETWORK_MANAGER" -a -x $libexecdir/perceus/perceus-dnsmasq ]; then
+      echo -n "Perceus Network Manager:"
+      checkproc perceus-dnsmasq
+      rc_status -v
+      RETVAL=$?
+   fi
+   if [ -x ${sbindir}/perceusd ]; then
+      echo -n "Perceusd:"
+      checkproc -p /var/run/perceusd.pid perceusd
+      rc_status -v
+      RETVAL=$?
+   fi
+   return $RETVAL
+}
+
+hup() {
+   if [ -z "$NO_NETWORK_MANAGER" ]; then
+      echo "Sending HUP to perceus-dnsmasq..."
+      killall -HUP perceus-dnsmasq
+   fi
+}
+
+case "$1" in
+  start)
+   start
+   EXITVAL=$?
+   ;;
+  stop)
+   stop
+   EXITVAL=$?
+   ;;
+  restart)
+   stop
+   start
+   EXITVAL=$?
+   ;;
+  condrestart)
+   if [ -f "/var/lock/subsys/perceusd" -o -f "/var/lock/subsys/perceus-dnsmasq" ]; then
+      stop
+      start
+      EXITVAL=$?
+   fi
+   ;;
+  status)
+   stats
+   EXITVAL=$?
+   ;;
+  reload)
+   hup
+   ;;
+  *)
+   echo $"Usage: $0 {start|stop|restart|condrestart|reload|status}"
+   exit 1
+esac
+
+exit $EXITVAL

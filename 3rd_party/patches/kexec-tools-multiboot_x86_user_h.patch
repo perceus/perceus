@@ -1,0 +1,11 @@
+diff -ur kexec-tools-testing-20061214/kexec/arch/i386/kexec-multiboot-x86.c kexec-tools-testing-20061214.gmk/kexec/arch/i386/kexec-multiboot-x86.c
+--- kexec-tools-testing-20061214/kexec/arch/i386/kexec-multiboot-x86.c	2006-12-13 23:12:03.000000000 -0800
++++ kexec-tools-testing-20061214.gmk/kexec/arch/i386/kexec-multiboot-x86.c	2007-03-14 23:23:06.000000000 -0700
+@@ -53,6 +53,7 @@
+ #include "../../kexec-elf.h"
+ #include "kexec-x86.h"
+ #include <arch/options.h>
++#include <sys/user.h>
+ 
+ /* From GNU GRUB */
+ #include <x86/mb_header.h>

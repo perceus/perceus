@@ -1,0 +1,359 @@
+<head>
+  <style type="text/css">
+    hr {
+      color: gray;
+    }
+    p {
+      margin-left: 20px;
+    }
+    body,td,th {
+      font-family: Verdana, Arial,Helvetica,sans-serif;
+      font-size: 14px;
+      color: #000000;
+      margin: 0;
+    }
+    body {
+      background-color: #E5E5E5;
+    }
+    text {
+      color: black;
+    }
+    tr.colored {
+      background: #d4d4de;
+    }
+    #thead {
+      font-weight: bold;
+    }
+    #error {
+      color: white;
+      background: red;
+      position: absolute;
+      border-width: 1px;
+      border-color: gray;
+      border-style: solid;
+      top: 100;
+      left: 33%;
+      right: 33%;
+      width: 33%;
+      font-weight: bold;
+      font-size: 16px;
+      text-align: center;
+    }
+    #warning {
+      color: black;
+      background: yellow;
+      position: absolute;
+      border-width: 1px;
+      border-color: gray;
+      border-style: solid;
+      top: 200;
+      left: 33%;
+      right: 33%;
+      width: 33%;
+      font-weight: bold;
+      font-size: 16px;
+      text-align: center;
+    }
+    #confirmation {
+      color: black;
+      background: yellow;
+      position: absolute;
+      border-width: 1px;
+      border-color: gray;
+      border-style: solid;
+      top: 200;
+      left: 33%;
+      right: 33%;
+      width: 33%;
+      font-weight: bold;
+      font-size: 16px;
+      text-align: center;
+    }
+    #notice {
+      color: black;
+      background: #CCCCCC;
+      position: absolute;
+      border-width: 1px;
+      border-color: gray;
+      border-style: solid;
+      top: 35%;
+      left: 33%;
+      right: 33%;
+      width: 33%;
+      font-weight: bold;
+      font-size: 16px;
+      text-align: center;
+    }
+    #header {
+      color: #22669a;
+	  font-family: Verdana, Arial,Helvetica,sans-serif;
+      font-weight: bold;
+      font-size: 16px;
+      text-align: center;
+    }
+    #subheader {
+      font-size: 12px;
+      text-align: left;
+    }
+    #main_table {
+      /*background: #e2e2ef;*/
+      font-size: 12px;
+    }
+    #footer {
+      background: #a4bf96;
+      width: 100%;
+    }
+    #title {
+      font-size: 16px;
+      font-weight: bold;
+      text-align: center;
+    }
+    font.tiny {
+      color: #a4bf96;
+      font: small-caps 9px verdana,arial;
+    }
+    pre.desc {
+      background: #b2b2b5;
+      border-width: 1px;
+      border-color: grey;
+      border-style: solid;
+      width: 100%;
+      min-height: 100px;
+      text-align: left;
+    }
+    table.body {
+      border-color: #d4d4de;
+      font-size: 12px;
+      border-width: 1px;
+      border-style: solid;
+    }
+    td.body {
+      border-color: #d4d4de;
+      border-width: 1px;
+      border-style: solid;
+    }
+    td.error {
+      background: red;
+      border-color: #A4BF96;
+      border-width: 1px;
+      border-style: solid;
+    }
+    td.warning {
+      background: #ebecb1;
+      border-color: #A4BF96;
+      border-width: 1px;
+      border-style: solid;
+    }
+    td.confirmation {
+      background: #ebecb1;
+      border-color: #A4BF96;
+      border-width: 1px;
+      border-style: solid;
+    }
+    input.textual {
+      background: #F3F3F3;
+      border: 1px solid #56565a;
+      font-size: 11px;
+      width: 125px;
+    }
+    select {
+      background: #F3F3F3;
+      border: 1px solid #56565a;
+      font-size: 11px;
+      width: 125px;
+    }
+    form {
+      padding: 0px;
+      margin: 0px;
+      font-size: 12px verdana,arial;
+    }
+    textarea.big {
+      background: #F3F3F3;
+      height: 200;
+      width: 100%;
+    }
+    a:link {
+      color: green;
+      font: 12px verdana,arial;
+      text-decoration: none;
+    }
+    a:visited {
+      color: green;
+      font: 12px verdana,arial;
+      text-decoration: none;
+    }
+    a:active {
+      color: green;
+      font: 12px verdana,arial;
+      text-decoration: none;
+    }
+    a:hover {
+      color: #0071BC;
+      font: 12px verdana,arial;
+      text-decoration: underline;
+    }
+    .breadcrumbs > a, a#header {
+      font: small-caps 14px verdana,arial;
+      font-weight: bold;
+    }               
+    .trunselected { background-color: #e2e2ef; }
+    .trselected { background-color: #d2d2e0; }
+    .graph {
+      position: relative;
+      width: 100%;
+      border: 2px solid #0860A8;
+      padding: 2px;
+      height: 1.5em;
+    }
+    .graph .bar {
+      display: block;
+      position: relative;
+      background: #cccccc;
+      text-align: center;
+      color: #0860A8;
+      height: 1.5em;
+      line-height: 1.5em;
+    }
+    .grid {
+      display: block;
+      position: relative;
+      text-align: center;
+      height: 300px;
+      width: 100%;
+      overflow: auto;
+    }
+    .style1 {
+      color: #000000;
+      font-weight: bold;
+    }
+    div#window_head {
+      position: fixed;
+      display: block;
+      top: 0;
+      left: 0;
+      right: 0;
+      width:100%;
+      text-align: center;
+      background-color: #ccc;
+      border-bottom: 1px solid gray;
+    }
+    a > img {
+      border: 0px;
+    }
+  </style>
+  <script type="text/javascript">
+    function toggle(box,theId) {
+      if(document.getElementById) {
+        var cell = document.getElementById(theId);
+        if(box.checked) {
+          cell.className = "trselected";
+        } else {
+          cell.className = "trunselected";
+        }
+      }
+    }
+    function show() {
+      var element = document.getElementById(show.arguments[0]);
+      element.style.display  = "block";
+    }
+    function hide() {
+      var element = document.getElementById(hide.arguments[0]);
+      element.style.display  = "none";
+    }
+    function autohide() {
+      setTimeout ( "hide('notice')", 5000 );
+    }
+    function openVNC() {
+      Vwidth = 800 + 32;
+      Vheight = 600 + 100 + 32;
+
+      myRef = window.open('vnc/vnc.cgi?width='+Vwidth+';vncport='+arguments[0]+';height='+Vheight,'mywin','left=20,top=20,width='+Vwidth+',height='+Vheight+',toolbar=0,resizable=0, menubar=0,location=0,navigation=0');
+      myRef.focus();
+
+    }
+    function checkControl(row) {
+      row.getElementsByTagName('input')[0].checked = true;
+    }
+
+  </script>
+  <title>
+    <!--title-->
+  </title>
+    <!--redirect-->
+</head>
+<body onLoad="autohide()">
+  <center>
+    <br>
+    <table width="90%" border="0" cellspacing="0" cellpadding="0">
+      <tr>
+        <td bgcolor="#FFFFFF"><img src="cornerl.gif" width="16" height="20" align="left"></td>
+        <td bgcolor="#FFFFFF"><img src="cornerr.gif" width="16" height="20" align="right"></td>
+      </tr>
+    </table>
+    <table width="90%" height="100%" border="0" cellpadding="0" cellspacing="0">
+      <tr>
+        <td colspan="3" valign="top" bgcolor="#FFFFFF">
+          <table border="0" cellpadding="0" cellspacing="0" width="100%">
+            <tr>
+              <td><table border=0 width="100%">
+            <tr>
+                      <td align="left">
+                         <a href="index.cgi"><img src="perceus-logo.gif" width="550" height="100" border="0" alt="Infiscale Webtools v1 :: PERCEUS ::"></a>
+                      </td>
+                      <td align=right valign=top>
+                         <div align="left">
+                            <font size=-1>
+                               <!--infobox-->
+                            </font>
+                         </div>
+                      </td>
+                </tr>
+                 </table>
+              </td>
+            </tr>
+            <tr height="10">
+              <td>&nbsp;
+                
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <table border="0" width="100%" height="500" align="center" id="main_table">
+                  <tr>
+                    <td valign="top" height=10>
+                      <table border="0" width="100%" align="center">
+                        <tr id="header">
+                          <td align="center" width="10%" %%node%%>
+                            <a id="header" href="./">Perceus Node Configuration</a>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td valign="top">
+                      <!--notification-->
+                      <!--body-->
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+       </td>
+      </tr>
+      <tr>
+        <td width="2%" bgcolor="#CCCCCC">
+          <div align="center"></div>
+        </td>
+        <td width="96%" bgcolor="#CCCCCC"> <div align="center">Please contact the <a href="mailto:info@infiscale.com">Infiscale staff</a> with  questions or comments or support needs.</div></td>
+        <td width="2%" bgcolor="#CCCCCC">&nbsp;</td>
+      </tr>
+    </table>
+  </center>
+  <br />
+  <div id="footer">
+  </div>
+</body>
+
+

@@ -1,0 +1,44 @@
+#!/bin/sh
+
+install -d -m 700 $HOME/.ssh
+
+if [ ! -f "$HOME/.ssh/nodes" -o ! -f "$HOME/.ssh/nodes.pub" ]; then
+   echo "Generating ssh keypairs for local cluster access"
+   ssh-keygen -t dsa -f $HOME/.ssh/nodes -N '' > /dev/null 2>&1
+   echo "Updating authorized keys"
+   cat $HOME/.ssh/nodes.pub >> $HOME/.ssh/authorized_keys
+fi
+
+if [ ! -f "$HOME/.ssh/config" ]; then
+   echo "Creating default ssh configuration"
+   touch $HOME/.ssh/config
+fi
+if ! grep -q '^# Created by /usr/bin/cluster-env (1.2)' $HOME/.ssh/config; then
+   if [ `grep "IdentityFile ~/.ssh/nodes" $HOME/.ssh/config | wc -l` -gt 1 ]; then
+      echo "Fixing ssh configuration file"
+      cat /dev/null > $HOME/.ssh/config
+   fi
+   echo "# Created by /usr/bin/cluster-env (1.2)"       >> $HOME/.ssh/config
+fi
+if ! grep -q '^Host *' $HOME/.ssh/config; then
+   echo "Host *"                                  >> $HOME/.ssh/config
+fi
+if ! grep -q 'IdentityFile ~/.ssh/identity' $HOME/.ssh/config; then
+   echo "   IdentityFile ~/.ssh/identity"         >> $HOME/.ssh/config
+fi
+if ! grep -q 'IdentityFile ~/.ssh/id_rsa' $HOME/.ssh/config; then
+   echo "   IdentityFile ~/.ssh/id_rsa"           >> $HOME/.ssh/config
+fi
+if ! grep -q 'IdentityFile ~/.ssh/id_dsa' $HOME/.ssh/config; then
+   echo "   IdentityFile ~/.ssh/id_dsa"           >> $HOME/.ssh/config
+fi
+if ! grep -q 'IdentityFile ~/.ssh/nodes' $HOME/.ssh/config; then
+   echo "   IdentityFile ~/.ssh/nodes"            >> $HOME/.ssh/config
+fi
+
+chmod 0600 $HOME/.ssh/config
+chmod 0600 $HOME/.ssh/authorized_keys
+
+if [ -n "$1" ]; then
+   ssh $*
+fi

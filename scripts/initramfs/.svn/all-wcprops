@@ -1,0 +1,89 @@
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/perceus/!svn/ver/2199/1.6/scripts/initramfs
+END
+kexec
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/kexec
+END
+dhcp-script
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/dhcp-script
+END
+hw_unload
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/hw_unload
+END
+passwd
+K 25
+svn:wc:ra_dav:version-url
+V 55
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/passwd
+END
+init
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/init
+END
+initramfs.conf.in
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/perceus/!svn/ver/2199/1.6/scripts/initramfs/initramfs.conf.in
+END
+nsswitch.conf
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/nsswitch.conf
+END
+functions
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/functions
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/Makefile.am
+END
+rc.perceus
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/rc.perceus
+END
+inittab
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/inittab
+END
+group
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/group
+END
+hw_load
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/perceus/!svn/ver/2199/1.6/scripts/initramfs/hw_load
+END
+reboot30
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/perceus/!svn/ver/2148/1.6/scripts/initramfs/reboot30
+END

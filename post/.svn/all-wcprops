@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 35
+/svn/perceus/!svn/ver/2330/1.6/post
+END
+mdev.conf
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/perceus/!svn/ver/2148/1.6/post/mdev.conf
+END
+Makefile.in
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/perceus/!svn/ver/2330/1.6/post/Makefile.in
+END
+devs.cpio
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/perceus/!svn/ver/2148/1.6/post/devs.cpio
+END

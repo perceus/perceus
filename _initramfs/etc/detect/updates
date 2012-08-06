@@ -1,0 +1,9 @@
+# This is a list of modules to subsitute. Format is simple... field1, old
+# module, field2 new module deliminated by white space. Any additional
+# fields are ignored.
+#
+# If there are modules that should be added to this list, please file a
+# bug report at http://bugzilla.caosity.org/.
+
+eepro100		e100
+mptscsih		mptspi

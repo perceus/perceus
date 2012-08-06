@@ -1,0 +1,11 @@
+
+
+# This will disable the network manager (DHCP, DNS, TFTP) on the
+# Perceus master. If you wish to disable or make changes to the
+# service itself, see /etc/perceus/dnsmasq.conf
+NO_NETWORK_MANAGER=
+
+# Setting this to "yes" will cause DHCP leases to be somewhat
+# stateless. Only touch this if you know what your doing.
+NO_LEASEFILE=
+

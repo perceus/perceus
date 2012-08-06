@@ -1,0 +1,34 @@
+diff -ru kexec-tools-testing-20070330/kexec/arch/i386/kexec-x86.c kexec-tools-testing-20070330.patched/kexec/arch/i386/kexec-x86.c
+--- kexec-tools-testing-20070330/kexec/arch/i386/kexec-x86.c	2007-03-29 22:34:36.000000000 -0600
++++ kexec-tools-testing-20070330.patched/kexec/arch/i386/kexec-x86.c	2007-05-24 13:57:56.000000000 -0600
+@@ -70,15 +70,30 @@
+ 		if (memcmp(str, "System RAM\n", 11) == 0) {
+ 			type = RANGE_RAM;
+ 		} 
++		else if (memcmp(str, "Conventional Memory\n", 20) == 0) {
++			type = RANGE_RAM;
++		}
++		else if (memcmp(str, "Loader Data\n", 12) == 0) {
++			type = RANGE_RAM;
++		}
+ 		else if (memcmp(str, "reserved\n", 9) == 0) {
+ 			type = RANGE_RESERVED;
+ 		}
++		else if (memcmp(str, "Reserved Memory\n", 16) == 0) {
++			type = RANGE_RESERVED;
++		}
+ 		else if (memcmp(str, "ACPI Tables\n", 12) == 0) {
+ 			type = RANGE_ACPI;
+ 		}
++		else if (memcmp(str, "ACPI Reclaim\n", 13) == 0) {
++			type = RANGE_ACPI;
++		}
+ 		else if (memcmp(str, "ACPI Non-volatile Storage\n", 26) == 0) {
+ 			type = RANGE_ACPI_NVS;
+ 		}
++		else if (memcmp(str, "ACPI NVS\n", 9) == 0) {
++			type = RANGE_ACPI_NVS;
++		}
+ 		else if (memcmp(str, "Crash kernel\n", 13) == 0) {
+ 		/* Redefine the memory region boundaries if kernel
+ 		 * exports the limits and if it is panic kernel.

@@ -1,0 +1,111 @@
+#!/bin/sh
+
+
+scsi=""
+network=""
+audio=""
+usb=""
+ieee2394=""
+eval `detect | while read devtype mod ; do
+   case "$devtype" in
+      "SCSI") scsi="$scsi $mod"
+         echo "scsi=\"$scsi"\";;
+      "NETWORK") network="$network $mod"
+         echo "network=\"$network"\";;
+      "AUDIO") audio="$audio $mod"
+         echo "audio=\"$audio"\";;
+      "USB") usb="$usb $mod"
+         echo "usb=\"$usb"\";;
+      "DISPLAY") display="$display $mod"
+         echo "display=\"$display"\";;
+      "IEEE1394") ieee1394="$ieee1394 $mod"
+         echo "ieee1394=\"$ieee1394"\";;
+   esac
+done`
+
+
+# First lets print out some default stuff...
+cat <<EOF
+# Created by modconf-generator from the "detect" hardware probe
+
+# Some default entries:
+alias pnp:dPNP0400 parport_pc
+alias pnp:dPNP0401 parport_pc
+alias pnp:dPNP0700 floppy
+alias pnp:dPNP0800 pcspkr
+alias pnp:dPNP0B00 rtc
+EOF
+
+count=0
+for module in $scsi ; do
+   echo 
+   echo -n "# SCSI Card #"
+   expr $count + 1
+   if [ $count -gt '0' ]; then
+      echo "alias scsi_hostadapter$count $module"
+   else
+      echo "alias scsi_hostadapter $module"
+   fi
+   count=`expr $count + 1`
+done
+
+count=0
+for module in $network ; do
+   echo
+   echo -n "# Network Card #"
+   expr $count + 1
+   if [ $module = 'ath_pci' ]; then
+      echo "alias ath0 ath_pci"
+   else
+      echo "alias eth$count $module"
+      count=`expr $count + 1`
+   fi
+done
+
+if [ -n "$audio" ]; then
+   echo
+   echo "# Audio base and OSS compat"
+   echo "alias char-major-116 snd"
+   echo "alias char-major-14 snd-pcm-oss"
+fi
+count=0
+for module in $audio ; do
+   echo
+   echo -n "# Audio Card #"
+   expr $count + 1
+   echo "alias snd-card-$count $module"
+   echo "alias sound-slot-$count snd-card-$count"
+   count=`expr $count + 1`
+done
+
+count=0
+for module in $usb; do
+   echo
+   echo -n "# USB controller #"
+   expr $count + 1
+   if [ $count -gt '0' ]; then
+      echo "alias usb-controller$count $module"
+   else
+      echo "alias usb-controller $module"
+   fi
+   count=`expr $count + 1`
+done
+
+count=0
+for module in $ieee1394; do
+   echo
+   echo -n "# Firewire controller #"
+   expr $count + 1
+   if [ $count -gt '0' ]; then
+      echo "alias ieee1394-controller$count $module"
+   else
+      echo "alias ieee1394-controller $module"
+   fi
+   count=`expr $count + 1`
+done
+
+echo
+echo "# List of blacklisted modules (if any)"
+for module in $display; do
+   echo "blacklist $module"
+done

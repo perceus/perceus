@@ -1,0 +1,89 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/perceus/!svn/ver/2364/1.6/scripts/init.d
+END
+nsa-provisiond.in
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/perceus/!svn/ver/2148/1.6/scripts/init.d/nsa-provisiond.in
+END
+redhat-perceus.in
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/perceus/!svn/ver/2364/1.6/scripts/init.d/redhat-perceus.in
+END
+debian-provisiond.in
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/perceus/!svn/ver/2148/1.6/scripts/init.d/debian-provisiond.in
+END
+gentoo-perceus.in
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/perceus/!svn/ver/2364/1.6/scripts/init.d/gentoo-perceus.in
+END
+slackware-perceus.in
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/perceus/!svn/ver/2364/1.6/scripts/init.d/slackware-perceus.in
+END
+perceus
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/perceus/!svn/ver/2364/1.6/scripts/init.d/perceus
+END
+redhat-provisiond.in
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/perceus/!svn/ver/2148/1.6/scripts/init.d/redhat-provisiond.in
+END
+suse-perceus.in
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/perceus/!svn/ver/2364/1.6/scripts/init.d/suse-perceus.in
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/perceus/!svn/ver/2148/1.6/scripts/init.d/Makefile.am
+END
+gentoo-provisiond.in
+K 25
+svn:wc:ra_dav:version-url
+V 66
+/svn/perceus/!svn/ver/2148/1.6/scripts/init.d/gentoo-provisiond.in
+END
+nsa-perceus.in
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/svn/perceus/!svn/ver/2364/1.6/scripts/init.d/nsa-perceus.in
+END
+debian-perceus.in
+K 25
+svn:wc:ra_dav:version-url
+V 63
+/svn/perceus/!svn/ver/2364/1.6/scripts/init.d/debian-perceus.in
+END
+slackware-provisiond.in
+K 25
+svn:wc:ra_dav:version-url
+V 69
+/svn/perceus/!svn/ver/2148/1.6/scripts/init.d/slackware-provisiond.in
+END
+suse-provisiond.in
+K 25
+svn:wc:ra_dav:version-url
+V 64
+/svn/perceus/!svn/ver/2148/1.6/scripts/init.d/suse-provisiond.in
+END

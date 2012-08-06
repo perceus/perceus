@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+
+
+# udhcpc support
+if ! test -z $ip; then
+   > /etc/resolv.conf
+   ifconfig $interface $ip netmask $subnet
+   route add default gw $router
+   for i in "$dns"; do
+      echo "nameserver $i" >> /etc/resolv.conf
+   done
+   echo "IPADDR=$ip"               >  /etc/ifstate
+   echo "DHCP_MASTER=$serverid"   >> /etc/ifstate
+   echo "BOOT_FILE=$boot_file"    >> /etc/ifstate
+fi
+
+# dhclient support
+if ! test -z $new_ip_address; then
+   > /etc/resolv.conf
+   ifconfig $interface $new_ip_address netmask $new_subnet_mask
+   route add default gw $new_routers
+   for i in "$new_domain_name_servers"; do
+      echo "nameserver $i" >> /etc/resolv.conf
+   done
+fi

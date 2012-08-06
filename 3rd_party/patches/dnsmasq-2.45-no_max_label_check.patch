@@ -1,0 +1,12 @@
+diff -Nur -x '*.orig' -x '*.rej' dnsmasq-2.45/src/util.c mezzanine_patched_dnsmasq-2.45/src/util.c
+--- dnsmasq-2.45/src/util.c	2008-07-20 11:26:07 -0700
++++ mezzanine_patched_dnsmasq-2.45/src/util.c	2009-02-04 14:12:23 -0800
+@@ -132,7 +132,7 @@
+     {
+       if (c == '.')
+ 	dotgap = 0;
+-      else if (!legal_char(c) || (++dotgap > MAXLABEL))
++      else if (!legal_char(c))
+ 	return 0;
+       else if (c != ' ')
+ 	nowhite = 1;

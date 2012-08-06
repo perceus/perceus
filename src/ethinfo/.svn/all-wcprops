@@ -1,0 +1,17 @@
+K 25
+svn:wc:ra_dav:version-url
+V 42
+/svn/perceus/!svn/ver/2148/1.6/src/ethinfo
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/perceus/!svn/ver/2148/1.6/src/ethinfo/Makefile.am
+END
+ethinfo.c
+K 25
+svn:wc:ra_dav:version-url
+V 52
+/svn/perceus/!svn/ver/2148/1.6/src/ethinfo/ethinfo.c
+END

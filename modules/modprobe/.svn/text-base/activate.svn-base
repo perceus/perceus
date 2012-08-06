@@ -1,0 +1,23 @@
+#!/bin/sh
+
+CONFIG=/etc/perceus/modules/modprobe
+
+if [ -f "$CONFIG" ]; then
+   exit
+fi
+
+mkdir -p `dirname $CONFIG`
+cat <<EOF > $CONFIG
+# This file will enable you to load particular modules on stateless nodes. It
+# will configure the node to load the module before any other kernel modules
+# are loaded (right before calling /sbin/init on the provisioned OS).
+#
+# Usage:
+#   nodename/groupname/vnfsname/all: [list of modules]...
+# e.g.
+#   node0000 sd_mod xfs
+
+#all: sd_mod xfs ext3 sunrpc nfs_acl lockd nfs
+
+EOF
+

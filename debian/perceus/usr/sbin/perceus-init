@@ -1,0 +1,184 @@
+#!/bin/sh
+
+# Double check that the user really wants to run this on an already
+# configured system
+if [ -d "/var/lib/perceus/database/" ]; then
+   while true; do
+      echo
+      echo "Running this program will rewrite your Perceus configuration! Are you sure"
+      echo -n "you wish to continue [yes/no]? "
+      read CONT
+      if [ "$CONT" == "yes" ]; then
+         break
+      elif [ "$CONT" == "no" ]; then
+         exit 1
+      fi
+   done
+fi
+
+# If Perceus hasn't already been registered, lets do that now:
+if [ ! -f "/var/lib/perceus/.registered" ]; then
+   perceus contact register
+fi
+
+
+echo
+echo "Looking for appropriate network interface"
+for dev in `grep -l BOOTPROTO=static /etc/sysconfig/nics/* /etc/sysconfig/network-scripts/ifcfg-eth* 2>/dev/null`; do
+   . $dev
+   if echo $IPADDR | egrep -q '^(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|30|31)\.).*'; then
+      break
+   fi
+done
+
+echo 
+echo -n "What network interface is connected to the private cluster network [${DEVICE:-eth0}]? "
+read DEV
+if [ -z "$DEV" ]; then
+   DEV=$DEVICE
+fi
+if [ -f "/etc/sysconfig/network-scripts/ifcfg-${DEV}" ]; then
+   . /etc/sysconfig/network-scripts/ifcfg-${DEV}
+elif [ -f "/etc/sysconfig/nics/${DEV}" ]; then
+   . /etc/sysconfig/nics/${DEV}
+fi
+
+if [ -z "$IPADDR" ]; then
+   echo
+   echo "ERROR: Could not find an appropriate network interface to use!"
+   exit 1
+fi
+
+echo "Creating Perceus configuration"
+sleep 1
+
+eval `ipcalc -n $IPADDR $NETMASK`
+
+echo "Using network device '$DEVICE' ($IPADDR/$NETMASK) for cluster management"
+sleep 1
+
+echo "Configuring Perceus"
+sleep 1
+sed -ie "s/^master network device =.*/master network device = $DEVICE/" /etc/perceus/perceus.conf
+perceus -e init                         >/dev/null
+perceus -e module activate masterauth   >/dev/null
+perceus -e module activate ipaddr       >/dev/null
+perceus -e module activate hostname     >/dev/null
+
+echo "Writing new /etc/hosts file (saving old one)"
+DATE=`date +%s`
+HOSTNAME=`hostname`
+mv /etc/hosts /etc/hosts.$DATE
+cat <<EOF > /etc/hosts
+127.0.0.1		localhost localhost.localdomain
+$IPADDR			$HOSTNAME
+
+EOF
+perceus -e configure hosts              >/dev/null
+
+echo "Creating default NFS exports"
+TMP=`mktemp`
+grep -v "# Perceus extra" /etc/exports > $TMP
+cat $TMP > /etc/exports
+rm -f $TMP
+cat <<EOF >> /etc/exports
+/home             $NETWORK/$NETMASK(rw,no_root_squash,async) # Perceus extra
+/usr/cports       $NETWORK/$NETMASK(ro,no_root_squash,async) # Perceus extra
+/usr/local        $NETWORK/$NETMASK(ro,no_root_squash,async) # Perceus extra
+/opt              $NETWORK/$NETMASK(ro,no_root_squash,async) # Perceus extra
+EOF
+
+test -d /home                   || mkdir -p /home
+test -d /usr/cports             || mkdir -p /usr/cports
+test -d /usr/local              || mkdir -p /usr/local
+test -d /opt                    || mkdir -p /opt
+
+if [ -f "/etc/ntp.conf" ]; then
+   echo "Enabling NTP for the nodes to syncronize with"
+   sed -i 's/.*restrict default .*/restrict default kod nomodify notrap noquery/' /etc/ntp.conf
+fi
+
+# Restarting services
+if [ -x "/sbin/chkconfig" ]; then
+   /sbin/chkconfig perceus on
+   if [ -f "/etc/init.d/nfs" ]; then
+      /sbin/chkconfig nfs on
+   fi
+   if [ -f "/etc/init.d/portmap" ]; then
+      /sbin/chkconfig portmap on
+   fi
+fi
+if [ -f "/etc/init.d/perceus" ]; then
+   /etc/init.d/perceus restart
+else
+   echo "Could not find the Perceus init script!"
+fi
+if [ -f "/etc/init.d/portmap" ]; then
+   /etc/init.d/portmap restart
+else
+   echo "Could not find the Portmap init script!"
+fi
+if [ -f "/etc/init.d/nfs" ]; then
+   /etc/init.d/nfs restart
+else
+   echo "Could not find the NFS init script!"
+fi
+
+# Here we will look for VNFS capsules
+
+ARCH=`uname -i`
+# We default to Caos. :)
+ostype="caos"
+osname="caos-nsa-node-1*"
+mirror_url="http://caos.osuosl.org/Caos-NSA-1.0/vnfs/$ARCH"
+mirror_host="Open Source Lab @ Orgeon State University"
+
+if grep -iq centos /etc/redhat-release >/dev/null 2>&1; then
+   ostype="centos"
+   osname="centos"
+   mirror_url="http://altruistic.infiscale.org/centos/5/vnfs/$ARCH"
+   mirror_host="Infiscale's public download site"
+elif grep -iq redhat /etc/redhat-release >/dev/null 2>&1; then
+   echo
+   echo "NOTICE: You are running Red Hat. Centos is free so that will be used for"
+   echo "NOTICE: the default VNFS capsule, but you should contact Infiscale.com"
+   echo "NOTICE: and obtain a Red Hat VNFS capsule. We have these ready and tested."
+   echo
+   sleep 3
+   ostype="centos"
+   osname="centos"
+   mirror_url="http://altruistic.infiscale.org/centos/5/vnfs/$ARCH"
+   mirror_host="Infiscale's public download site"
+fi
+
+if [ -n "$ostype" ]; then
+   echo "Searching for a VNFS capsule to match your system..."
+   echo "Checking: $mirror_host"
+   if ping -c 3 $mirror_host >/dev/null 2>&1; then
+      ARCH=`uname -p`
+      echo "Checking for VNFS capsule version ($ostype)"
+      cd ~
+      VNFS=`echo -ne "glob echo $osname*.vnfs\n" | lftp $mirror_url 2>/dev/null | sed -e 's/ /\n/g' | sort -n | tail -n 1`
+   
+      if [ -n "$VNFS" ]; then
+         echo "Downloading VNFS: $VNFS"
+         if which curl >/dev/null 2>&1; then
+            curl $mirror_url/$VNFS -O
+         elif which wget >/dev/null 2>&1; then
+            wget $mirror_url/$VNFS
+         else
+            echo -ne "mget $VNFS\n" | lftp $mirror_url
+         fi
+   
+         VNFSNAME=`echo $VNFS | sed -e 's@.vnfs@@'`
+         echo "Importing VNFS: $VNFSNAME"
+         if perceus -e vnfs import $VNFS </dev/null >/dev/null; then
+            sed -ie "s/^.*Vnfs Name =.*/Vnfs Name = $VNFSNAME/" /etc/perceus/defaults.conf
+         fi
+      else
+         echo "ERROR: Could not find suitable VNFS capsule"
+      fi
+   fi
+fi
+
+exit 0

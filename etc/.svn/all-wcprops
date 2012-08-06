@@ -1,0 +1,41 @@
+K 25
+svn:wc:ra_dav:version-url
+V 34
+/svn/perceus/!svn/ver/2364/1.6/etc
+END
+perceus_completion
+K 25
+svn:wc:ra_dav:version-url
+V 53
+/svn/perceus/!svn/ver/2148/1.6/etc/perceus_completion
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 46
+/svn/perceus/!svn/ver/2148/1.6/etc/Makefile.am
+END
+Perceus_Include.pm.in
+K 25
+svn:wc:ra_dav:version-url
+V 56
+/svn/perceus/!svn/ver/2346/1.6/etc/Perceus_Include.pm.in
+END
+perceus-cgi.conf
+K 25
+svn:wc:ra_dav:version-url
+V 51
+/svn/perceus/!svn/ver/2148/1.6/etc/perceus-cgi.conf
+END
+perceus.conf
+K 25
+svn:wc:ra_dav:version-url
+V 47
+/svn/perceus/!svn/ver/2364/1.6/etc/perceus.conf
+END
+defaults.conf
+K 25
+svn:wc:ra_dav:version-url
+V 48
+/svn/perceus/!svn/ver/2328/1.6/etc/defaults.conf
+END

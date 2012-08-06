@@ -1,0 +1,29 @@
+K 25
+svn:wc:ra_dav:version-url
+V 45
+/svn/perceus/!svn/ver/2311/1.6/modules/ipaddr
+END
+50-ipaddr.pl
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/perceus/!svn/ver/2311/1.6/modules/ipaddr/50-ipaddr.pl
+END
+activate
+K 25
+svn:wc:ra_dav:version-url
+V 54
+/svn/perceus/!svn/ver/2148/1.6/modules/ipaddr/activate
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 57
+/svn/perceus/!svn/ver/2148/1.6/modules/ipaddr/Makefile.am
+END
+defaultroles
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/perceus/!svn/ver/2148/1.6/modules/ipaddr/defaultroles
+END

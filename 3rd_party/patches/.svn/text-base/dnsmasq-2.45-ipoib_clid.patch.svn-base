@@ -1,0 +1,60 @@
+diff -Nur -x '*.orig' -x '*.rej' dnsmasq-2.45/src/dhcp.c mezzanine_patched_dnsmasq-2.45/src/dhcp.c
+--- dnsmasq-2.45/src/dhcp.c	2008-07-20 11:26:07 -0700
++++ mezzanine_patched_dnsmasq-2.45/src/dhcp.c	2008-08-20 22:42:20 -0700
+@@ -744,7 +744,6 @@
+ 	  my_syslog(LOG_ERR, _("bad line at %s line %d"), ETHERSFILE, lineno); 
+ 	  continue;
+ 	}
+-      
+       /* check for name or dotted-quad */
+       for (cp = ip; *cp; cp++)
+ 	if (!(*cp == '.' || (*cp >='0' && *cp <= '9')))
+@@ -812,11 +811,11 @@
+ 	  if (flags & CONFIG_ADDR)
+ 	    config->addr = addr;
+ 	}
+-      
+-      config->flags |= CONFIG_HWADDR | CONFIG_NOCLID;
++
++      config->flags |= CONFIG_HWADDR;
+       memcpy(config->hwaddr, hwaddr, ETHER_ADDR_LEN);
+       config->hwaddr_len = ETHER_ADDR_LEN;
+-      config->hwaddr_type = ARPHRD_ETHER;
++      config->hwaddr_type = 0;
+       count++;
+     }
+   
+diff -Nur -x '*.orig' -x '*.rej' dnsmasq-2.45/src/rfc2131.c mezzanine_patched_dnsmasq-2.45/src/rfc2131.c
+--- dnsmasq-2.45/src/rfc2131.c	2008-07-20 11:26:07 -0700
++++ mezzanine_patched_dnsmasq-2.45/src/rfc2131.c	2008-08-20 22:53:58 -0700
+@@ -227,7 +227,29 @@
+ 	{
+ 	  clid_len = option_len(opt);
+ 	  clid = option_ptr(opt, 0);
+-	}
++
++          /* If we have a client ID but no hardware address, use the client ID for both. */
++          if (mess->hlen == 0)
++            {
++              syslog(LOG_WARNING, "Copying client ID to hardware address field.");
++              mess->hlen = clid_len;
++              if (clid_len > DHCP_CHADDR_MAX)
++                mess->hlen = DHCP_CHADDR_MAX;
++              if (*((uint8_t *) clid) == 1)
++                {
++                  memcpy(mess->chaddr, clid + 1, --mess->hlen);
++                }
++              else
++                {
++                  memcpy(mess->chaddr, clid, mess->hlen);
++                }
++              mess->htype = 0;
++            }
++	}
++      /* Because we used the client id for the chaddr, lets
++       * just pretend this never existed.... */
++      clid_len = 0;
++      clid = 0;
+ 
+       /* do we have a lease in store? */
+       lease = lease_find_by_client(mess->chaddr, mess->hlen, mess->htype, clid, clid_len);

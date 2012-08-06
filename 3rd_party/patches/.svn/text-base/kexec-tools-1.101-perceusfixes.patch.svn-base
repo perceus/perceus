@@ -1,0 +1,81 @@
+diff -ru kexec-tools-1.101/kexec/arch/i386/kexec-bzImage.c kexec-tools-1.101.patched/kexec/arch/i386/kexec-bzImage.c
+--- kexec-tools-1.101/kexec/arch/i386/kexec-bzImage.c	2005-01-13 05:32:01 -0800
++++ kexec-tools-1.101.patched/kexec/arch/i386/kexec-bzImage.c	2008-07-25 22:10:11 -0700
+@@ -182,7 +182,7 @@
+ 	/*
+ 	 * Initialize the 16bit start information.
+ 	 */
+-	regs16.cs = setup_base + 0x20;
++	regs16.cs = (setup_base >> 4) + 0x20;
+ 	regs16.ip = 0;
+ 	regs16.ss = (elf_rel_get_addr(&info->rhdr, "stack_end") - 64*1024) >> 4;
+ 	regs16.esp = 0xFFFC;
+diff -ru kexec-tools-1.101/kexec/arch/i386/kexec-x86.c kexec-tools-1.101.patched/kexec/arch/i386/kexec-x86.c
+--- kexec-tools-1.101/kexec/arch/i386/kexec-x86.c	2005-02-05 15:24:35 -0800
++++ kexec-tools-1.101.patched/kexec/arch/i386/kexec-x86.c	2008-07-25 22:10:11 -0700
+@@ -79,6 +79,21 @@
+ 		else if (memcmp(str, "ACPI Non-volatile Storage\n", 26) == 0) {
+ 			type = RANGE_ACPI_NVS;
+ 		}
++		else if (memcmp(str, "Conventional Memory\n", 20) == 0) {
++			type = RANGE_RAM;
++		}
++		else if (memcmp(str, "Loader Data\n", 12) == 0) {
++			type = RANGE_RAM;
++		}
++		else if (memcmp(str, "Reserved Memory\n", 16) == 0) {
++			type = RANGE_RESERVED;
++		}
++		else if (memcmp(str, "ACPI Reclaim\n", 13) == 0) {
++			type = RANGE_ACPI;
++		}
++		else if (memcmp(str, "ACPI NVS\n", 9) == 0) {
++			type = RANGE_ACPI_NVS;
++		}
+ 		else {
+ 			continue;
+ 		}
+diff -ru kexec-tools-1.101/kexec/kexec.c kexec-tools-1.101.patched/kexec/kexec.c
+--- kexec-tools-1.101/kexec/kexec.c	2005-01-13 05:24:29 -0800
++++ kexec-tools-1.101.patched/kexec/kexec.c	2008-07-25 22:10:18 -0700
+@@ -193,8 +193,8 @@
+ 		
+ 	/* Perform a merge on the 2 sorted lists of memory ranges  */
+ 	for (j = 0, i = 0; i < memory_ranges; i++) {
+-		unsigned long sstart, send;
+-		unsigned long mstart, mend;
++		unsigned long long sstart, send;
++		unsigned long long mstart, mend;
+ 		mstart = memory_range[i].start;
+ 		mend = memory_range[i].end;
+ 		if (memory_range[i].type != RANGE_RAM)
+@@ -232,7 +232,7 @@
+ 		if (start < hole_min) {
+ 			start = hole_min;
+ 		}
+-		start = (start + hole_align - 1) & ~(hole_align - 1);
++		start = (start + hole_align - 1) & ~((unsigned long long)hole_align - 1);
+ 		if (end > mem_max) {
+ 			end = mem_max;
+ 		}
+@@ -250,7 +250,7 @@
+ 				hole_base = start;
+ 				break;
+ 			} else {
+-				hole_base = (end - hole_size) & ~(hole_align - 1);
++				hole_base = (end - hole_size) & ~((unsigned long long)hole_align - 1);
+ 			}
+ 		}
+ 	}
+diff -ru kexec-tools-1.101/purgatory/arch/i386/entry32-16.S kexec-tools-1.101.patched/purgatory/arch/i386/entry32-16.S
+--- kexec-tools-1.101/purgatory/arch/i386/entry32-16.S	2004-12-20 05:57:07 -0800
++++ kexec-tools-1.101.patched/purgatory/arch/i386/entry32-16.S	2008-07-25 22:10:11 -0700
+@@ -25,7 +25,7 @@
+ entry16:
+ 	.code32
+ 	/* Compute where I am running at */
+-	movl	$entry16_debug, %ebx	
++	movl	$entry16, %ebx
+ 
+ 	/* Fixup my real mode segment */
+ 	movl	%ebx, %eax

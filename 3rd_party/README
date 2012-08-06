@@ -1,0 +1,32 @@
+The following sources are included in Perceus, kept in their own
+seperate tree, and are unmodified from their upstream sources.
+
+linux:
+   License:       GPL
+   URL:           http://www.kernel.org
+   Description:   It is the kernel of the Perceus initramfs
+
+DBD-SQLite2:
+   License:       Artistic/Public Domain
+   URL:           http://search.cpan.org/dist/DBD-SQLite2/
+   Description:   Perl interface to SQLite v2 (SQLite is embedded)
+
+busybox:
+   License:       GPL
+   URL:           http://www.busybox.net/
+   Description:   Multifunction binary for embedded and lightweight systems
+
+kexec-tools:
+   License:       GPL
+   URL:           http://www.xmission.com/~ebiederm/files/kexec/
+   Description:   Used to interface to the kernel's kexec() system call
+
+kexec-tools-testing:
+   License:       GPL
+   URL:           http://www.kernel.org/pub/linux/kernel/people/horms/kexec-tools/
+   Description:   Used to interface to the kernel's kexec() system call
+
+dnsmasq:
+   License:       GPL
+   URL:           http://www.thekelleys.org.uk/dnsmasq/doc.html
+   Description:   All in one, DHCP, DNS proxy, and TFTP server

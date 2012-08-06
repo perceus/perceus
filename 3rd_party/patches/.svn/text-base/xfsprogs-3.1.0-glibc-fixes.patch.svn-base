@@ -1,0 +1,26 @@
+diff --git a/include/builddefs.in b/include/builddefs.in
+index ca8f172..cc75b5d 100644
+--- a/include/builddefs.in
++++ b/include/builddefs.in
+@@ -102,7 +102,7 @@ GCCFLAGS = -funsigned-char -fno-strict-aliasing -Wall
+ #	   -Wbitwise -Wno-transparent-union -Wno-old-initializer -Wno-decl
+ 
+ ifeq ($(PKG_PLATFORM),linux)
+-PCFLAGS = -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 $(GCCFLAGS)
++PCFLAGS = -D_GNU_SOURCE -D_XOPEN_SOURCE=500 -D_FILE_OFFSET_BITS=64 $(GCCFLAGS)
+ DEPENDFLAGS = -D__linux__
+ endif
+ ifeq ($(PKG_PLATFORM),darwin)
+diff --git a/include/linux.h b/include/linux.h
+index dbfb4cf..b342e55 100644
+--- a/include/linux.h
++++ b/include/linux.h
+@@ -22,6 +22,7 @@
+ #include <sys/ioctl.h>
+ #include <sys/param.h>
+ #include <sys/sysmacros.h>
++#include <sys/stat.h>
+ #include <malloc.h>
+ #include <getopt.h>
+ #include <endian.h>
+

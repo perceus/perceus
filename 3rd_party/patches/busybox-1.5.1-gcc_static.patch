@@ -1,0 +1,32 @@
+diff -ru busybox-1.5.1/Makefile busybox-1.5.1.patched/Makefile
+--- busybox-1.5.1/Makefile	2007-05-20 10:00:47.000000000 -0700
++++ busybox-1.5.1.patched/Makefile	2007-05-29 18:42:34.000000000 -0700
+@@ -567,7 +567,7 @@
+ quiet_cmd_busybox__ ?= LINK    $@
+       cmd_busybox__ ?= $(srctree)/scripts/trylink $(CC) $(LDFLAGS) \
+       -o $@ -Wl,-M \
+-      -Wl,--warn-common -Wl,--sort-common -Wl,--gc-sections \
++      -Wl,--warn-common -Wl,--sort-common \
+       -Wl,--start-group $(busybox-all) -Wl,--end-group \
+       $(LDLIBS)
+ 
+diff -ru busybox-1.5.1/applets/applets.c busybox-1.5.1.patched/applets/applets.c
+--- busybox-1.5.1/applets/applets.c	2007-05-20 09:57:48.000000000 -0700
++++ busybox-1.5.1.patched/applets/applets.c	2007-05-29 18:43:07.000000000 -0700
+@@ -20,16 +20,6 @@
+ #undef PROTOTYPES
+ 
+ 
+-/* Apparently uclibc defines __GLIBC__ (compat trick?). Oh well. */
+-#if ENABLE_STATIC && defined(__GLIBC__) && !defined(__UCLIBC__)
+-#warning Static linking against glibc produces buggy executables
+-#warning (glibc does not cope well with ld --gc-sections).
+-#warning See sources.redhat.com/bugzilla/show_bug.cgi?id=3400
+-#warning Note that glibc is unsuitable for static linking anyway.
+-#warning If you still want to do it, remove -Wl,--gc-sections
+-#warning from top-level Makefile and remove this warning.
+-#endif
+-
+ #if ENABLE_SHOW_USAGE && !ENABLE_FEATURE_COMPRESS_USAGE
+ static const char usage_messages[] =
+ #define MAKE_USAGE

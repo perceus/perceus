@@ -1,0 +1,11 @@
+Package: perceus
+Version: 1.6.2
+Architecture: amd64
+Maintainer: Infiscale <astevens@infiscale.com>
+Installed-Size: 15080
+Depends: perl, perl-modules, libdbi-perl, libunix-syslog-perl, libio-interface-perl, libnet-arp-perl, nasm, openssl, libyaml-perl, libdbi-perl, bzip2, rsync
+Section: System Tools
+Priority: extra
+Homepage: <infiscale.com>
+Description: <Perceus 1.6.2>
+ <The defacto free open source provisioning solution for Cloud and HPC from Infiscale.>

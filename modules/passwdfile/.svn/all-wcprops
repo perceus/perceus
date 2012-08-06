@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 49
+/svn/perceus/!svn/ver/2333/1.6/modules/passwdfile
+END
+activate
+K 25
+svn:wc:ra_dav:version-url
+V 58
+/svn/perceus/!svn/ver/2148/1.6/modules/passwdfile/activate
+END
+Makefile.am
+K 25
+svn:wc:ra_dav:version-url
+V 61
+/svn/perceus/!svn/ver/2148/1.6/modules/passwdfile/Makefile.am
+END
+defaultroles
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/perceus/!svn/ver/2148/1.6/modules/passwdfile/defaultroles
+END
+perceus-useradd
+K 25
+svn:wc:ra_dav:version-url
+V 65
+/svn/perceus/!svn/ver/2148/1.6/modules/passwdfile/perceus-useradd
+END
+50-passwd.sh
+K 25
+svn:wc:ra_dav:version-url
+V 62
+/svn/perceus/!svn/ver/2333/1.6/modules/passwdfile/50-passwd.sh
+END

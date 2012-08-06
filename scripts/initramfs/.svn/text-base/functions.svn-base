@@ -1,0 +1,124 @@
+#!/bin/sh
+#
+# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
+# Infiscale, Inc. All rights reserved
+#
+
+ENABLE_DEBUG=`grep " enable-debug=" /proc/cmdline | sed -e 's@.*perceus_debug=\([^ ]\+\).*@\1@'`
+export ENABLE_DEBUG
+
+if [ "x$ENABLE_DEBUG" = "x" ]; then
+   ENABLE_DEBUG=0
+fi
+
+if [ $ENABLE_DEBUG -ge 2 ]; then
+   set -x
+fi
+
+MASTERIP_CMDLINE=`sed -e '/ masterip=/!d;s/.*masterip=\([^ ]*\).*/\1/' /proc/cmdline`
+export MASTERIP_CMDLINE
+
+PROVISIOND_ARGS=`sed -e '/ provisiond_args=/!d;s/.*provisiond_args=\([^ ]*\).*/\1/' /proc/cmdline`
+export PROVISIOND_ARGS
+
+PERCEUSD_ARGS=`sed -e '/ perceusd_args=/!d;s/.*perceusd_args=\([^ ]*\).*/\1/' /proc/cmdline`
+export PERCEUSD_ARGS
+
+
+DHCP_ETH=`sed -e '/ dhcp_eth=/!d;s/.*dhcp_eth=\([^ ]*\).*/\1/' /proc/cmdline`
+export DHCP_ETH
+
+DHCP_MAC=`sed -e '/ dhcp_mac=/!d;s/.*dhcp_mac=\([^ ]*\).*/\1/' /proc/cmdline | sed 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/'`
+export DHCP_MAC
+
+MTU=`sed -e '/ eth_mtu=/!d;s/.*eth_mtu=\([^ ]*\).*/\1/' /proc/cmdline`
+export MTU
+
+KEXEC_LEGACY=`grep -q " kexec-legacy" /proc/cmdline && echo 1`
+export KEXEC_LEGACY
+
+ENABLE_USB=`grep -q " enable-usb" /proc/cmdline && echo 1`
+export ENABLE_USB
+
+ENABLE_KMODS=`sed -e '/ enable-kmods=/!d;s/.*enable-kmods=\([^ ]*\).*/\1/;s/,/ /g' /proc/cmdline`
+export ENABLE_KMODS
+
+ENABLE_NODEID=`grep -q " enable-nodeid" /proc/cmdline && echo 1`
+export ENABLE_NODEID
+
+DISABLE_KMODS=`sed -e '/ noload=/!d;s/.*noload=\([^ ]*\).*/\1/' /proc/cmdline`
+export DISABLE_KMODS
+
+if [ -z "$NOIB" ]; then
+   ENABLE_IB=1
+fi
+
+echo $DISABLE_KMODS | sed -e 's/,/\n/g' >> /etc/blacklist
+
+if [ -n "$ENABLE_KMODS" ]; then
+   ENABLE_KMODS=`echo $ENABLE_KMODS | sed -e 's/,/ /'`
+fi
+
+if [ $ENABLE_DEBUG -eq 0 ]; then
+   PROVISIOND_ARGS="$PROVISIOND_ARGS"
+elif [ $ENABLE_DEBUG -eq 1 ]; then
+   PROVISIOND_ARGS="$PROVISIOND_ARGS -v"
+else
+   PROVISIOND_ARGS="$PROVISIOND_ARGS -d"
+fi
+
+reboot_on_error() {
+   if [ $1 -ne 0 ]; then
+      reboot30
+   fi
+}
+
+printline() {
+   echo -ne "\r\\033[K"
+   echo -ne $@
+}
+
+do_this() {
+   OUT=`$@ 2>&1`
+   RETVAL=$?
+   if [ $RETVAL -ne 0 ]; then
+      echo -ne " "
+      echo -ne "\\033[74G"
+      echo -ne "\\033[1;31m"
+      echo -ne "Error"
+      echo $OUT
+      echo -ne "\\033[0;39m"
+   fi
+   return $RETVAL
+}
+
+dprint() {
+   level=$1
+   string=$2
+   if [ $level -le $ENABLE_DEBUG ]; then
+      echo -ne "$string"
+   fi
+}
+
+load_module() {
+   if ! grep -q "^$1 " /proc/modules && ! egrep -q "^$1\$" /etc/blacklist; then
+      dprint 2 "Loading: $1"
+      if PATH=/sbin modprobe $1 >/dev/null 2>&1; then
+         dprint 2 "ok\n"
+      else
+         dprint 2 "error\n"
+      fi
+   fi
+}
+
+unload_module() {
+   if grep -q "^$1 " /proc/modules; then
+      dprint 2 "Un-loading: $1"
+      if PATH=/sbin rmmod $1 >/dev/null 2>&1; then
+         dprint 2 "ok\n"
+      else
+         dprint 2 "error\n"
+      fi
+   fi
+}
+
