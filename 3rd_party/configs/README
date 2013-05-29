@@ -1,0 +1,7 @@
+Both busybox configs were created by running
+make oldconfig
+using the original perceus config files.
+All the defualts were selected for the operation.
+
+
+

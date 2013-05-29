@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
-# Infiscale, Inc. All rights reserved
+# Copyright (c) 2006-2013, Infiscale
+# astevens@infiscale.com
 #
 
 MAX_TRIES=5
@@ -31,17 +31,17 @@ WHITE="\\033[1;37m"
 NORMAL="\\033[0;39m"
 
 
-# If you want to change the below lines and redistribute, please talk to
-# Infiscale and become a partner first at info@perceus.org.
+# If you want to change the below lines and redistribute, please  leave a link 
+# to perceus.org.
 echo -e "    ${RED}____${NORMAL}    ${BLUE}Provision Enterprise Resources and Clusters Enabling Uniform Systems${NORMAL}"
 echo -e "   ${RED}/ __ \___  _____________  __  _______${NORMAL}"
 echo -e "  ${RED}/ /_/ / _ \/ ___/ ___/ _ \/ / / / ___/${NORMAL}  PERCEUS HPC - VERSION $VERSION-$BUILD"
-echo -e " ${RED}/ ____/  __/ /  / /__/  __/ /_/ (__  )${NORMAL}   (C) 2005-2009 INFISCALE.COM"
-echo -e "${RED}/_/    \___/_/   \___/\___/\__,_/____/${NORMAL}    info@perceus.org"
+echo -e " ${RED}/ ____/  __/ /  / /__/  __/ /_/ (__  )${NORMAL}   (C) 2005-2013 INFISCALE.COM"
+echo -e "${RED}/_/    \___/_/   \___/\___/\__,_/____/${NORMAL}    http://www.perceus.org"
 echo -e ""
-echo -e "Perceus is given free of charge to the open source community.  Commercial"
-echo -e "distribution and support should only be done by Infiscale and its partners so"
-echo -e "we can keep Perceus free for everyone.  Contact us for details!"
+echo -e "Perceus is open source, community and user driven since 2005. "
+echo -e "Special thanks to the DoD and DoE for pushing node counts to the limit."
+echo -e "Visit www.perceus.org for documentation and updates or to contribute."
 
 echo '--------------------------------------------------------------------------------'
 echo

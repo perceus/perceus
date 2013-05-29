@@ -6,27 +6,44 @@ linux:
    URL:           http://www.kernel.org
    Description:   It is the kernel of the Perceus initramfs
 
-DBD-SQLite2:
-   License:       Artistic/Public Domain
-   URL:           http://search.cpan.org/dist/DBD-SQLite2/
-   Description:   Perl interface to SQLite v2 (SQLite is embedded)
-
 busybox:
    License:       GPL
    URL:           http://www.busybox.net/
+   URL:           http://www.busybox.net/downloads/busybox-1.18.5.tar.bz2
    Description:   Multifunction binary for embedded and lightweight systems
 
 kexec-tools:
    License:       GPL
-   URL:           http://www.xmission.com/~ebiederm/files/kexec/
-   Description:   Used to interface to the kernel's kexec() system call
-
-kexec-tools-testing:
-   License:       GPL
-   URL:           http://www.kernel.org/pub/linux/kernel/people/horms/kexec-tools/
+   URL:           http://horms.net/projects/kexec/kexec-tools
+   URL:           http://horms.net/projects/kexec/kexec-tools/kexec-tools-2.0.2.tar.gz
    Description:   Used to interface to the kernel's kexec() system call
 
 dnsmasq:
    License:       GPL
    URL:           http://www.thekelleys.org.uk/dnsmasq/doc.html
+   URL:           http://www.thekelleys.org.uk/dnsmasq/dnsmasq-2.59.tar.gz
    Description:   All in one, DHCP, DNS proxy, and TFTP server
+
+e2fsprogs:
+   License:
+   URL:		http://sourceforge.net/projects/e2fsprogs/
+   Description: file systems
+
+mdadm:
+   URL:		http://neil.brown.name/git?p=mdadm;a=shortlog;h=refs/tags/mdadm-3.2.3
+   URL:		http://neil.brown.name/git?p=mdadm;a=snapshot;h=1fbc5b7a5ea9709cdfff7fe7b63b43dfd4def124;sf=tgz
+
+memtest86+:
+   URL:		http://www.memtest.org/#downcode
+   URL:		www.memtest.org/download/4.20/memtest86+-4.20.tar.gz
+
+syslinux:
+   URL:		http://www.kernel.org/pub/linux/utils/boot/syslinux/
+   URL:		www.kernel.org/pub/linux/utils/boot/syslinux/syslinux-4.04.tar.gz
+
+xfprogs:
+   URL:		http://xfs.org/index.php/Getting_the_latest_source_code#XFS_Released.2FStable_source
+   URL:		ftp://oss.sgi.com/projects/xfs/cmd_tars/xfsprogs-3.1.7.tar.gz
+
+
+

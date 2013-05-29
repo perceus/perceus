@@ -136,7 +136,7 @@ mirror_host="Open Source Lab @ Orgeon State University"
 if grep -iq centos /etc/redhat-release >/dev/null 2>&1; then
    ostype="centos"
    osname="centos"
-   mirror_url="http://altruistic.infiscale.org/centos/5/vnfs/$ARCH"
+   mirror_url="http://altruistic.infiscale.com/centos/5/vnfs/$ARCH"
    mirror_host="Infiscale's public download site"
 elif grep -iq redhat /etc/redhat-release >/dev/null 2>&1; then
    echo

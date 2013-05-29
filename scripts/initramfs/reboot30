@@ -4,7 +4,7 @@
 # Infiscale, Inc. All rights reserved
 #
 
-seconds=30
+seconds=10
 reboot="/sbin/reboot"
 tmpfile="/tmp/reboot"
 

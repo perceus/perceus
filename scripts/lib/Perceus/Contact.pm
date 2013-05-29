@@ -32,7 +32,7 @@ use IO::Socket;
 sub contact_register {
 # And for the "Perl'ers" who simply comment out the code in order not to
 # register, this is here for a reason! All we ask for is a notification
-# that someone is using it. Don't be lame, and just register!
+# that someone is using it
 
    &dprint("Entered function");
 

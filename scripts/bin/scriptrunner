@@ -2,13 +2,12 @@
 #
 # Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
 # Infiscale, Inc. All rights reserved
-# Copyright (c) 2010-2011 Arthur A. Stevens, Infiscale
 #
 
 BEGIN {
     $0 = "scriptrunner";
     require "/etc/perceus/Perceus_Include.pm";
-    push( @INC, "$Perceus_Include::libdir" );
+    push(@INC, "$Perceus_Include::libdir");
 }
 
 #use strict;
@@ -20,7 +19,7 @@ use Perceus::Debug;
 use Perceus::DB;
 use Getopt::Long;
 
-Getopt::Long::Configure("bundling");
+Getopt::Long::Configure ("bundling");
 
 $| = '1';
 
@@ -37,101 +36,98 @@ visit us at: http://www.perceus.org/
 ";
 
 GetOptions(
-    'debug' => \$debug,
-    'help'  => \$help,
+   'debug'         => \$debug,
+   'help'          => \$help,
 );
 
-my @databases     = &list_databases();
-my %config        = &parse_config("/etc/perceus/perceus.conf");
-my $eth           = $config{"master network device"}[0];
-my $master_ipaddr = $config{"vnfs transfer master"}[0] || &get_ipaddr($eth);
-my $command       = shift(@ARGV);
-my $NodeID        = shift(@ARGV);
 
-if ( !$NodeID or $help ) {
-    die $usage;
+my @databases = &list_databases();
+my %config = &parse_config("/etc/perceus/perceus.conf");
+my $eth = $config{"master network device"}[0];
+my $master_ipaddr = $config{"vnfs transfer master"}[0] || &get_ipaddr($eth);
+my $command = shift(@ARGV);
+my $NodeID = shift(@ARGV);
+
+if ( ! $NodeID or $help ) {
+   die $usage;
 }
 
-foreach my $db (@databases) {
+foreach my $db ( @databases ) {
     $db{"$db"} = &opendb($db);
 }
+
 
 $NodeName = $db{"hostname"}->get($NodeID);
 
 $0 = "scriptrunner: $NodeName ($command)";
 
-if ($NodeName) {
+if ( $NodeName ) {
     &dprint("Got command from '$NodeName': '$command'");
 
-    my $Vnfs        = $db{"vnfs"}->get($NodeID);
-    my $Group       = $db{"group"}->get($NodeID);
-    my $Enabled     = $db{"enabled"}->get($NodeID);
-    my $Debug       = $db{"debug"}->get($NodeID);
+    my $Vnfs = $db{"vnfs"}->get($NodeID);
+    my $Group = $db{"group"}->get($NodeID);
+    my $Enabled = $db{"enabled"}->get($NodeID);
+    my $Debug = $db{"debug"}->get($NodeID);
     my $CurrentTime = time();
 
     %ENV = ();
 
-    $ENV{'PATH'}       = "/bin:/usr/bin:/sbin:/usr/sbin";
-    $ENV{'STATE'}      = $command;
-    $ENV{'NODENAME'}   = $NodeName;
-    $ENV{'VNFS'}       = $Vnfs;
-    $ENV{'ENABLED'}    = $Enabled;
-    $ENV{'DEBUG'}      = $Debug;
-    $ENV{'GROUPNAME'}  = $Group;
-    $ENV{'NODEID'}     = $NodeID;
-    $ENV{'IPADDR'}     = $ipaddr;
-    $ENV{'STATEDIR'}   = $Perceus_Include::statedir;
+    $ENV{'PATH'} = "/bin:/usr/bin:/sbin:/usr/sbin";
+    $ENV{'STATE'} = $command;
+    $ENV{'NODENAME'} = $NodeName;
+    $ENV{'VNFS'} = $Vnfs;
+    $ENV{'ENABLED'} = $Enabled;
+    $ENV{'DEBUG'} = $Debug;
+    $ENV{'GROUPNAME'} = $Group;
+    $ENV{'NODEID'} = $NodeID;
+    $ENV{'IPADDR'} = $ipaddr;
+    $ENV{'STATEDIR'} = $Perceus_Include::statedir;
     $ENV{'VNFSMASTER'} = $master_ipaddr;
     $ENV{'VNFSMETHOD'} = $config{"vnfs transfer method"}[0];
     $ENV{'VNFSPREFIX'} = $config{"vnfs transfer prefix"}[0] || "";
 
     &dprint("Getting scriptlist for: $NodeName/$NodeID");
 
-    my @scripts = &nodescriptlist( $NodeName, $command, $Group, $Vnfs );
+    my @scripts = &nodescriptlist($NodeName, $command, $Group, $Vnfs);
 
     print("# NODESCRIPT START\n");
 
-    foreach $script (@scripts) {
+    foreach $script ( @scripts ) {
         if ( -x "$script" ) {
             &dprint("Running nodescript: $script\n");
-            open( FD, "$script |" );
-            while (<FD>) {
+            open(FD, "$script |");
+            while(<FD>) {
                 print;
             }
             close FD;
-        }
-        elsif ( -f "$script" ) {
-            my $ok   = ();
+        } elsif ( -f "$script" ) {
+            my $ok = ();
             my $send = ();
-            open( SCRIPT, "$script" );
-            while ( $line = <SCRIPT> ) {
+            open(SCRIPT, "$script");
+            while($line=<SCRIPT>) {
                 if ( $line =~ /^#!\/bin\/sh/ ) {
-                    $ok = 1;
+                   $ok = 1;
                 }
-                if ($ok) {
-                    $send .= $line;
+                if ( $ok ) {
+                   $send .= $line;
                 }
             }
-            if ( !close SCRIPT ) {
-                &wprint(
-                    "$script did not close properly for node '$NodeName'\n");
+            if ( ! close SCRIPT ) {
+                &wprint("$script did not close properly for node '$NodeName'\n");
                 $ok = ();
             }
-            if ($ok) {
-                &dprint("Sending nodescript contents: $script\n");
-                print("$send\n");
+            if ( $ok ) {
+               &dprint("Sending nodescript contents: $script\n");
+               print("$send\n");
+            } else {
+               &eprint("Nothing to send in nodescript: $script\n");
             }
-            else {
-                &eprint("Nothing to send in nodescript: $script\n");
-            }
-        }
-        else {
+        } else {
             &eprint("Can not deal with nodescript '$script'\n");
         }
     }
 
     print("# NODESCRIPT END\n");
-}
-else {
+} else {
     print STDERR "That node ID does not exist!\n";
 }

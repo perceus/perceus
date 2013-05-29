@@ -1,0 +1,115 @@
+diff -rupN dnsmasq-2.59/src/dhcp.c dnsmasq-2.59-CriterionDigital-patched/src/dhcp.c
+--- dnsmasq-2.59/src/dhcp.c	2011-12-05 02:09:27.438324439 -0600
++++ dnsmasq-2.59-CriterionDigital-patched/src/dhcp.c	2011-12-05 02:45:37.214349612 -0600
+@@ -942,15 +942,15 @@ void dhcp_read_ethers(void)
+ 	  if (flags & CONFIG_ADDR)
+ 	    config->addr = addr;
+ 	}
+-      
+-      config->flags |= CONFIG_NOCLID;
++
++      config->flags |= CONFIG_ADDR;
+       if (!config->hwaddr)
+ 	config->hwaddr = whine_malloc(sizeof(struct hwaddr_config));
+       if (config->hwaddr)
+ 	{
+ 	  memcpy(config->hwaddr->hwaddr, hwaddr, ETHER_ADDR_LEN);
+ 	  config->hwaddr->hwaddr_len = ETHER_ADDR_LEN;
+-	  config->hwaddr->hwaddr_type = ARPHRD_ETHER;
++	  config->hwaddr->hwaddr_type = 0;
+ 	  config->hwaddr->wildcard_mask = 0;
+ 	  config->hwaddr->next = NULL;
+ 	}
+@@ -1087,15 +1087,6 @@ char *host_from_dns(struct in_addr addr)
+ /* return domain or NULL if none. */
+ char *strip_hostname(char *hostname)
+ {
+-  char *dot = strchr(hostname, '.');
+- 
+-  if (!dot)
+-    return NULL;
+-  
+-  *dot = 0; /* truncate */
+-  if (strlen(dot+1) != 0)
+-    return dot+1;
+-  
+   return NULL;
+ }
+ 
+diff -rupN dnsmasq-2.59/src/log.c dnsmasq-2.59-CriterionDigital-patched/src/log.c
+--- dnsmasq-2.59/src/log.c	2011-12-05 01:31:23.642297943 -0600
++++ dnsmasq-2.59-CriterionDigital-patched/src/log.c	2011-12-05 01:39:27.000000000 -0600
+@@ -297,7 +297,7 @@ void my_syslog(int priority, const char
+ 
+   if (echo_stderr) 
+     {
+-      fprintf(stderr, "dnsmasq%s: ", func);
++      fprintf(stderr, "perceus-dnsmasq%s: ", func);
+       va_start(ap, format);
+       vfprintf(stderr, format, ap);
+       va_end(ap);
+@@ -330,7 +330,7 @@ void my_syslog(int priority, const char
+ 
+       if (!isopen)
+ 	{
+-	  openlog("dnsmasq", LOG_PID, log_fac);
++	  openlog("perceus-dnsmasq", LOG_PID, log_fac);
+ 	  isopen = 1;
+ 	}
+       va_start(ap, format);  
+@@ -369,8 +369,8 @@ void my_syslog(int priority, const char
+       /* Omit timestamp for default daemontools situation */
+       if (!log_stderr || !option_bool(OPT_NO_FORK)) 
+ 	p += sprintf(p, "%.15s ", ctime(&time_now) + 4);
+-      
+-      p += sprintf(p, "dnsmasq%s[%d]: ", func, (int)pid);
++
++      p += sprintf(p, "perceus-dnsmasq%s[%d]: ", func, (int)pid);
+         
+       len = p - entry->payload;
+       va_start(ap, format);  
+diff -rupN dnsmasq-2.59/src/rfc2131.c dnsmasq-2.59-CriterionDigital-patched/src/rfc2131.c
+--- dnsmasq-2.59/src/rfc2131.c	2011-12-05 02:54:40.134355912 -0600
++++ dnsmasq-2.59-CriterionDigital-patched/src/rfc2131.c	2011-12-05 02:57:13.078357686 -0600
+@@ -233,7 +233,29 @@ size_t dhcp_reply(struct dhcp_context *c
+ 	{
+ 	  clid_len = option_len(opt);
+ 	  clid = option_ptr(opt, 0);
++
++          /* If we have a client ID but no hardware address, use the client ID for both. */
++          if (mess->hlen == 0)
++            {
++              syslog(LOG_WARNING, "Copying client ID to hardware address field.");
++              mess->hlen = clid_len;
++              if (clid_len > DHCP_CHADDR_MAX)
++                mess->hlen = DHCP_CHADDR_MAX;
++              if (*((uint8_t *) clid) == 1)
++                {
++                  memcpy(mess->chaddr, clid + 1, --mess->hlen);
++                }
++              else
++                {
++                  memcpy(mess->chaddr, clid, mess->hlen);
++                }
++              mess->htype = 0;
++            }
+ 	}
++      /* Because we used the client id for the chaddr, lets
++       * just pretend this never existed.... */
++      clid_len = 0;
++      clid = 0;
+ 
+       /* do we have a lease in store? */
+       lease = lease_find_by_client(mess->chaddr, mess->hlen, mess->htype, clid, clid_len);
+diff -rupN dnsmasq-2.59/src/util.c dnsmasq-2.59-CriterionDigital-patched/src/util.c
+--- dnsmasq-2.59/src/util.c	2011-12-05 02:11:17.590325716 -0600
++++ dnsmasq-2.59-CriterionDigital-patched/src/util.c	2011-12-05 02:16:12.074329133 -0600
+@@ -116,8 +116,6 @@ static int check_name(char *in)
+     {
+       if (c == '.')
+ 	dotgap = 0;
+-      else if (++dotgap > MAXLABEL)
+-	return 0;
+       else if (isascii((unsigned char)c) && iscntrl((unsigned char)c)) 
+ 	/* iscntrl only gives expected results for ascii */
+ 	return 0;

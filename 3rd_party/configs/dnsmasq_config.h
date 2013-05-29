@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2007 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2011 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -10,21 +10,23 @@
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
      
-  You should have received a copy of the GNU General Public License
-  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define VERSION "2.45"
+#define VERSION "2.59"
 
 #define FTABSIZ 150 /* max number of outstanding requests (default) */
 #define MAX_PROCS 20 /* max no children for TCP requests */
 #define CHILD_LIFETIME 150 /* secs 'till terminated (RFC1035 suggests > 120s) */
-#define EDNS_PKTSZ 1280 /* default max EDNS.0 UDP packet from RFC2671 */
+#define EDNS_PKTSZ 4096 /* default max EDNS.0 UDP packet from RFC5625 */
 #define TIMEOUT 10 /* drop UDP queries after TIMEOUT seconds */
+#define FORWARD_TEST 50 /* try all servers every 50 queries */
+#define FORWARD_TIME 20 /* or 20 seconds */
 #define RANDOM_SOCKS 64 /* max simultaneous random ports */
 #define LEASE_RETRY 60 /* on error, retry writing leasefile after LEASE_RETRY seconds */
 #define CACHESIZ 150 /* default cache size */
-#define MAXLEASES 150 /* maximum number of DHCP leases */
+#define MAXLEASES 1000 /* maximum number of DHCP leases */
 #define PING_WAIT 3 /* wait for ping address-in-use test */
 #define PING_CACHE_TIME 30 /* Ping test assumed to be valid this long. */
 #define DECLINE_BACKOFF 600 /* disable DECLINEd static addresses for this long */
@@ -38,56 +40,45 @@
 #  define RESOLVFILE "/etc/resolv.conf"
 #endif
 #define RUNFILE "/var/run/dnsmasq.pid"
-#if defined(__FreeBSD__) || defined (__OpenBSD__) || defined(__DragonFly__)
-#   define LEASEFILE "/var/db/dnsmasq.leases"
-#elif defined(__sun__) || defined (__sun)
-#   define LEASEFILE "/var/cache/dnsmasq.leases"
-#else
-#   define LEASEFILE "/var/lib/misc/dnsmasq.leases"
+
+#ifndef LEASEFILE
+#   if defined(__FreeBSD__) || defined (__OpenBSD__) || defined(__DragonFly__) || defined(__NetBSD__)
+#      define LEASEFILE "/var/db/dnsmasq.leases"
+#   elif defined(__sun__) || defined (__sun)
+#      define LEASEFILE "/var/cache/dnsmasq.leases"
+#   elif defined(__ANDROID__)
+#      define LEASEFILE "/data/misc/dhcp/dnsmasq.leases"
+#   else
+#      define LEASEFILE "/var/lib/misc/dnsmasq.leases"
+#   endif
 #endif
-#if defined(__FreeBSD__)
-#   define CONFFILE "/usr/local/etc/dnsmasq.conf"
-#else
-#   define CONFFILE "/etc/perceus/dnsmasq.conf"
+
+#ifndef CONFFILE
+#   if defined(__FreeBSD__)
+#      define CONFFILE "/usr/local/etc/dnsmasq.conf"
+#   else
+#      define CONFFILE "/etc/perceus/dnsmasq.conf"
+#   endif
 #endif
+
 #define DEFLEASE 3600 /* default lease time, 1 hour */
 #define CHUSER "nobody"
 #define CHGRP "dip"
+#define NAMESERVER_PORT 53
 #define DHCP_SERVER_PORT 67
 #define DHCP_CLIENT_PORT 68
 #define DHCP_SERVER_ALTPORT 1067
 #define DHCP_CLIENT_ALTPORT 1068
+#define PXE_PORT 4011
 #define TFTP_PORT 69
 #define TFTP_MAX_CONNECTIONS 50 /* max simultaneous connections */
 #define LOG_MAX 5 /* log-queue length */
 #define RANDFILE "/dev/urandom"
+#define EDNS0_OPTION_MAC 5 /* dyndns.org temporary assignment */
 
 /* DBUS interface specifics */
 #define DNSMASQ_SERVICE "uk.org.thekelleys.dnsmasq"
 #define DNSMASQ_PATH "/uk/org/thekelleys/dnsmasq"
-
-/* A small collection of RR-types which are missing on some platforms */
-
-#ifndef T_SIG
-#  define T_SIG 24
-#endif
-
-#ifndef T_SRV
-#  define T_SRV 33
-#endif
-
-#ifndef T_OPT
-#  define T_OPT 41
-#endif
-
-#ifndef T_TKEY
-#  define T_TKEY 249
-#endif
-
-#ifndef T_TSIG
-#  define T_TSIG 250
-#endif
-
 
 /* Follows system specific switches. If you run on a 
    new system, you may want to edit these. 
@@ -97,9 +88,6 @@ HAVE_LINUX_NETWORK
 HAVE_BSD_NETWORK
 HAVE_SOLARIS_NETWORK
    define exactly one of these to alter interaction with kernel networking.
-
-HAVE_SOLARIS_PRIVS
-   define for Solaris > 10 which can split privileges.
 
 HAVE_BROKEN_RTC
    define this on embedded systems which don't have an RTC
@@ -115,12 +103,14 @@ HAVE_BROKEN_RTC
    NOTE: when enabling or disabling this, be sure to delete any old
    leases file, otherwise dnsmasq may get very confused.
 
-HAVE_ISC_READER 
-   define this to include the old ISC dhcpcd integration. Note that you cannot
-   set both HAVE_ISC_READER and HAVE_BROKEN_RTC.
-
 HAVE_TFTP
    define this to get dnsmasq's built-in TFTP server.
+
+HAVE_DHCP
+   define this to get dnsmasq's DHCP server.
+
+HAVE_SCRIPT
+   define this to get the ability to call scripts on lease-change
 
 HAVE_GETOPT_LONG
    define this if you have GNU libc or GNU getopt. 
@@ -133,17 +123,21 @@ HAVE_SOCKADDR_SA_LEN
    define this if struct sockaddr has sa_len field (*BSD) 
 
 HAVE_DBUS
-   Define this if you want to link against libdbus, and have dnsmasq
-   define some methods to allow (re)configuration of the upstream DNS 
+   define this if you want to link against libdbus, and have dnsmasq
+   support some methods to allow (re)configuration of the upstream DNS 
    servers via DBus.
 
-HAVE_BSD_BRIDGE
-   Define this to enable the --bridge-interface option, useful on some
-   BSD systems.
+HAVE_IDN
+   define this if you want international domain name support.
+   NOTE: for backwards compatibility, IDN support is automatically 
+         included when internationalisation support is built, using the 
+	 *-i18n makefile targets, even if HAVE_IDN is not explicitly set.
 
-HAVE_LARGFILE
-   Define this if the C library supports large (>2GB) files probably true everywhere 
-   except some builds of uclibc
+HAVE_CONNTRACK
+   define this to include code which propogates conntrack marks from
+   incoming DNS queries to the corresponding upstream queries. This adds
+   a build-dependency on libnetfilter_conntrack, but the resulting binary will
+   still run happily on a kernel without conntrack support.
 
 NOTES:
    For Linux you should define 
@@ -164,19 +158,30 @@ NOTES:
 */
 
 /* platform independent options- uncomment to enable */
+#define HAVE_DHCP
 #define HAVE_TFTP
+#define HAVE_SCRIPT
 /* #define HAVE_BROKEN_RTC */
-/* #define HAVE_ISC_READER */
 /* #define HAVE_DBUS */
-
-#if defined(HAVE_BROKEN_RTC) && defined(HAVE_ISC_READER)
-#  error HAVE_ISC_READER is not compatible with HAVE_BROKEN_RTC
-#endif
+/* #define HAVE_IDN */
+/* #define HAVE_CONNTRACK */
 
 /* Allow TFTP to be disabled with COPTS=-DNO_TFTP */
 #ifdef NO_TFTP
 #undef HAVE_TFTP
 #endif
+
+/* Allow DHCP to be disabled with COPTS=-DNO_DHCP */
+#ifdef NO_DHCP
+#undef HAVE_DHCP
+#endif
+
+/* Allow scripts to be disabled with COPTS=-DNO_SCRIPT */
+#ifdef NO_SCRIPT
+#undef HAVE_SCRIPT
+#endif
+
+
 
 /* platform dependent options. */
 
@@ -215,32 +220,24 @@ NOTES:
 #define HAVE_GETOPT_LONG
 #undef HAVE_ARC4RANDOM
 #undef HAVE_SOCKADDR_SA_LEN
-/* glibc < 2.2  has broken Sockaddr_in6 so we have to use our own. */
-/* glibc < 2.2 doesn't define in_addr_t */
-#if defined(__GLIBC__) && (__GLIBC__ == 2) && \
-    defined(__GLIBC_MINOR__) && (__GLIBC_MINOR__ < 2)
-typedef unsigned long in_addr_t; 
-#   define HAVE_BROKEN_SOCKADDR_IN6
-#endif
 
 #elif defined(__FreeBSD__) || \
       defined(__OpenBSD__) || \
       defined(__DragonFly__) || \
-      defined (__FreeBSD_kernel__)
+      defined(__FreeBSD_kernel__)
 #define HAVE_BSD_NETWORK
 /* Later verions of FreeBSD have getopt_long() */
 #if defined(optional_argument) && defined(required_argument)
 #   define HAVE_GETOPT_LONG
 #endif
-#if !defined (__FreeBSD_kernel__)
+#if !defined(__FreeBSD_kernel__)
 #   define HAVE_ARC4RANDOM
 #endif
 #define HAVE_SOCKADDR_SA_LEN
-#define HAVE_BSD_BRIDGE
 
 #elif defined(__APPLE__)
 #define HAVE_BSD_NETWORK
-#undef HAVE_GETOPT_LONG
+#define HAVE_GETOPT_LONG
 #define HAVE_ARC4RANDOM
 #define HAVE_SOCKADDR_SA_LEN
 /* Define before sys/socket.h is included so we get socklen_t */
@@ -251,34 +248,14 @@ typedef unsigned long in_addr_t;
 #define HAVE_GETOPT_LONG
 #undef HAVE_ARC4RANDOM
 #define HAVE_SOCKADDR_SA_LEN
-#define HAVE_BSD_BRIDGE
 
 #elif defined(__sun) || defined(__sun__)
 #define HAVE_SOLARIS_NETWORK
-/* only Solaris 10 does split privs. */
-#if (SUNOS_VER >= 10)
-#  define HAVE_SOLARIS_PRIVS
-#  define HAVE_GETOPT_LONG
-#endif
-/* some CMSG stuff missing on early solaris */
-#ifndef OSSH_ALIGNBYTES
-#  define OSSH_ALIGNBYTES (sizeof(int) - 1)
-#endif
-#ifndef __CMSG_ALIGN
-#  define __CMSG_ALIGN(p) (((u_int)(p) + OSSH_ALIGNBYTES) &~ OSSH_ALIGNBYTES)
-#endif
-#ifndef CMSG_LEN
-#  define CMSG_LEN(len)   (__CMSG_ALIGN(sizeof(struct cmsghdr)) + (len))
-#endif
-#ifndef CMSG_SPACE
-#  define CMSG_SPACE(len) (__CMSG_ALIGN(sizeof(struct cmsghdr)) + __CMSG_ALIGN(len))
-#endif
+#define HAVE_GETOPT_LONG
 #undef HAVE_ARC4RANDOM
 #undef HAVE_SOCKADDR_SA_LEN
-
-#define _XPG4_2
-#define __EXTENSIONS__
-#define ETHER_ADDR_LEN 6
+#define ETHER_ADDR_LEN 6 
+ 
 #endif
 
 /* Decide if we're going to support IPv6 */
@@ -300,5 +277,10 @@ typedef unsigned long in_addr_t;
 #else
 #  undef HAVE_IPV6
 #  define ADDRSTRLEN 16 /* 4*3 + 3 dots + NULL */
+#endif
+
+/* Can't do scripts without fork */
+#ifdef NOFORK
+#  undef HAVE_SCRIPT
 #endif
 

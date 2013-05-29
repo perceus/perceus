@@ -6,9 +6,8 @@
 #include <stdio.h>
 
 
-void errmsg(char *msg)
-{
-    printf(msg);
-    exit(1);
+void errmsg(char *msg) {
+   printf(msg);
+   exit(1);
 }
 

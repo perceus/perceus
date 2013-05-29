@@ -1,7 +1,7 @@
 
 #
-# Copyright (c) 2006-2009, Greg M. Kurtzer, Arthur A. Stevens and
-# Infiscale, Inc. All rights reserved
+# Copyright (c) 2006-2013, Infiscale
+# astevens@infiscale.com
 #
 
 
@@ -233,16 +233,8 @@ sub configure_dhcpd {
    print TFTP "Perceus: High performance cluster management\n";
    print TFTP "\n";
    print TFTP "Perceus solves many of the scalability problems that occur when managing\n";
-   print TFTP "multiple similar or groups of similar systems.  Facilitating uniformity,\n";
-   print TFTP "Perceus takes the lessons learned from one of the most widely used cluster\n";
-   print TFTP "management software toolkits (Warewulf), multiple industries and the\n";
-   print TFTP "flexibility required by most organizations and has implemented the next\n";
-   print TFTP "generation, massively scalable systems provisioning toolkit.\n";
+   print TFTP "multiple similar or groups of similar systems.  \n";
    print TFTP "\n";
-   print TFTP "This option will boot your system into the Perceus stage one operating\n";
-   print TFTP "system bootstrapper and will then look for a Perceus master on the local\n";
-   print TFTP "network.  Use the [UP]/[DOWN] arrow keys to select a different option\n";
-   print TFTP "from the above menu.\n";
    print TFTP "endtext\n";
    print TFTP "\n";
    print TFTP "label local\n";
